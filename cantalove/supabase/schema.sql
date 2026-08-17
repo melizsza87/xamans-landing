@@ -1,0 +1,77 @@
+-- cantalove.com — Supabase schema
+-- Run this once against a fresh Supabase project (SQL Editor or `supabase db push`).
+-- All API access goes through the Next.js server using the service_role key, which
+-- bypasses Row Level Security. RLS is enabled on every table with NO public policies,
+-- so anon/authenticated clients are denied by default — the browser never talks to
+-- Supabase directly.
+
+create extension if not exists "pgcrypto";
+
+-- ============================================================================
+-- Orders
+-- ============================================================================
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz default now(),
+  status text not null default 'pending'
+    constraint orders_status_check
+    check (status in ('pending', 'generating', 'preview', 'paid', 'delivered', 'failed')),
+  tier text
+    constraint orders_tier_check
+    check (tier in ('basic', 'premium', 'vip')),
+  amount integer, -- price in centavos MXN, snapshotted at checkout time
+  mp_payment_id text,
+  mp_preference_id text,
+  contact_email text
+);
+
+comment on table orders is 'One row per song order. status tracks the order lifecycle end to end.';
+
+-- ============================================================================
+-- Personalizations
+-- ============================================================================
+create table if not exists personalizations (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references orders(id) on delete cascade,
+  occasion text not null,
+  names text not null,
+  story text not null,
+  genre text not null,
+  voice text not null,
+  duration text not null
+);
+
+create index if not exists personalizations_order_id_idx on personalizations(order_id);
+
+-- ============================================================================
+-- Songs
+-- ============================================================================
+create table if not exists songs (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references orders(id) on delete cascade,
+  lyrics text,
+  preview_url text, -- Suno-hosted audio URL used for the 30s gated preview player
+  full_url text,     -- Supabase Storage object path for the paid full track (set after payment)
+  status text not null default 'generating'
+    constraint songs_status_check
+    check (status in ('generating', 'ready', 'failed'))
+);
+
+create index if not exists songs_order_id_idx on songs(order_id);
+
+-- ============================================================================
+-- Row Level Security — locked down by default.
+-- Only the server (service_role key) reads/writes these tables.
+-- ============================================================================
+alter table orders enable row level security;
+alter table personalizations enable row level security;
+alter table songs enable row level security;
+
+-- ============================================================================
+-- Storage — private bucket for paid full-length tracks and lyric PDFs.
+-- Downloads are served exclusively via short-lived signed URLs from
+-- /api/download/[orderId], never via public bucket access.
+-- ============================================================================
+insert into storage.buckets (id, name, public)
+values ('tracks', 'tracks', false)
+on conflict (id) do nothing;
