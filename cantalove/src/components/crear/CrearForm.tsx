@@ -35,6 +35,53 @@ const LOADING_MESSAGES = [
   "Casi lista...",
 ];
 
+const SONG_POLL_INTERVAL_MS = 5000;
+const SONG_POLL_TIMEOUT_MS = 6 * 60 * 1000;
+// After this many polls (~20s), switch the loading copy to "Casi lista...".
+const ALMOST_READY_AFTER_TICKS = 4;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface SongStatusResponse {
+  status: "processing" | "ready" | "failed";
+  audioUrl?: string;
+  error?: string;
+}
+
+async function waitForSongReady(
+  jobId: string,
+  onTick: (ticks: number) => void
+): Promise<void> {
+  const deadline = Date.now() + SONG_POLL_TIMEOUT_MS;
+  let ticks = 0;
+
+  while (Date.now() < deadline) {
+    await sleep(SONG_POLL_INTERVAL_MS);
+    ticks += 1;
+    onTick(ticks);
+
+    const res = await fetch(`/api/song-status/${jobId}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(
+        body?.error || "No se pudo consultar el estado de la canción"
+      );
+    }
+
+    const status = (await res.json()) as SongStatusResponse;
+    if (status.status === "ready") return;
+    if (status.status === "failed") {
+      throw new Error("No se pudo generar la música, intenta de nuevo");
+    }
+  }
+
+  throw new Error(
+    "La generación está tardando más de lo esperado, intenta de nuevo en unos minutos"
+  );
+}
+
 interface FormState {
   occasion: string;
   names: string;
@@ -107,10 +154,15 @@ export function CrearForm() {
 
       if (!songRes.ok) {
         const body = await songRes.json().catch(() => null);
-        throw new Error(body?.error || "No se pudo generar la música");
+        throw new Error(body?.error || "No se pudo iniciar la generación de música");
       }
 
-      setLoadingStep(2);
+      const { jobId } = await songRes.json();
+
+      await waitForSongReady(jobId, (ticks) => {
+        if (ticks >= ALMOST_READY_AFTER_TICKS) setLoadingStep(2);
+      });
+
       router.push(`/preview/${orderId}`);
     } catch (err) {
       setError(

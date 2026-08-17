@@ -19,17 +19,25 @@ cliente, y hoy ninguna ruta del frontend las necesita.
 1. `/` → el usuario llena el formulario de personalización en `/crear`.
 2. `POST /api/generate-lyrics` → llama a Claude, crea la orden en Supabase y
    devuelve la letra generada.
-3. `POST /api/generate-song` → llama a Suno vía Apiframe con esa letra y
-   devuelve la URL del preview.
-4. `/preview/[orderId]` → reproductor real, corta el audio a los 30s y
+3. `POST /api/generate-song` → envía el trabajo a Suno vía Apiframe y
+   devuelve de inmediato un `jobId` (no espera a que el audio esté listo).
+4. El frontend hace polling cada 5s a `GET /api/song-status/[jobId]` hasta
+   recibir `status: "ready"`, momento en el que ese mismo endpoint ya guardó
+   la URL del preview en Supabase y movió la orden a `preview`.
+5. `/preview/[orderId]` → reproductor real, corta el audio a los 30s y
    muestra el gate de pago con los 3 tiers.
-5. El usuario elige un tier → `POST /api/checkout` crea una preferencia de
+6. El usuario elige un tier → `POST /api/checkout` crea una preferencia de
    MercadoPago y redirige al checkout hospedado.
-6. `POST /api/mercadopago/webhook` verifica la notificación, marca la orden
+7. `POST /api/mercadopago/webhook` verifica la notificación, marca la orden
    como pagada, sube el track completo a Supabase Storage y dispara el
    email de entrega vía Resend.
-7. `/descarga/[orderId]` sólo muestra la descarga si la orden está pagada en
+8. `/descarga/[orderId]` sólo muestra la descarga si la orden está pagada en
    Supabase (`GET /api/download/[orderId]` genera una URL firmada).
+
+Este diseño evita tener cualquier ruta esperando minutos por Suno: ninguna
+API route de este flujo necesita `maxDuration` extendido — cada llamada
+(incluyendo cada poll de `/api/song-status/[jobId]`) responde en menos de
+un par de segundos, así que corre sin cambios en cualquier plan de Vercel.
 
 ## Setup paso a paso
 
@@ -58,15 +66,20 @@ npm install
 ### 4. Apiframe (Suno)
 
 1. Crea una cuenta en [apiframe.ai](https://apiframe.ai) y genera tu API key.
-2. Colócala en `APIFRAME_API_KEY`.
-3. `src/lib/apiframe.ts` asume los endpoints documentados actualmente en
-   [docs.apiframe.ai](https://docs.apiframe.ai) para generación de Suno
-   (`/suno/custom-generate`) y consulta de tareas (`/fetch`). Verifica esos
-   nombres de campo contra la documentación vigente antes de ir a
-   producción — Apiframe puede actualizar su contrato.
-4. La generación de música puede tardar varios minutos. `/api/generate-song`
-   declara `export const maxDuration = 300`, lo cual requiere un plan de
-   Vercel que soporte duración extendida de funciones (Pro o superior).
+2. Colócala en `APIFRAME_API_KEY`. Se envía en el header `X-API-Key` (no
+   `Authorization`).
+3. `src/lib/apiframe.ts` llama a `POST /v2/music/generate` (todos los campos
+   de Suno — `custom_mode`, `title`, `style`, `vocal_gender`,
+   `model_version`, `instrumental` — van dentro de `sunoParams`, nunca en el
+   nivel superior) y a `GET /v2/jobs/:id` para consultar el resultado.
+   Verifica esos nombres de campo contra
+   [docs.apiframe.ai](https://docs.apiframe.ai) antes de ir a producción —
+   Apiframe puede actualizar su contrato.
+4. La generación de música es asíncrona y puede tardar varios minutos:
+   `/api/generate-song` sólo envía el trabajo y devuelve un `jobId`;
+   `/api/song-status/[jobId]` es el que hace el polling contra Apiframe
+   (uno por llamada, sin loop) hasta que el track está listo. Ninguna de las
+   dos rutas necesita duración extendida de función en Vercel.
 
 ### 5. MercadoPago
 
@@ -115,9 +128,7 @@ URL pública.
    directory del proyecto.
 2. Configura todas las variables de `.env.example` en **Project Settings →
    Environment Variables**.
-3. Verifica que el plan de Vercel soporte `maxDuration = 300` para
-   `/api/generate-song` (ver sección Apiframe arriba).
-4. Actualiza `NEXT_PUBLIC_SITE_URL` con el dominio final y vuelve a
+3. Actualiza `NEXT_PUBLIC_SITE_URL` con el dominio final y vuelve a
    configurar el webhook de MercadoPago con esa URL.
 
 ## Estructura
@@ -133,7 +144,8 @@ cantalove/
 │   │   ├── descarga/[orderId]/   # Descarga tras pago confirmado
 │   │   └── api/
 │   │       ├── generate-lyrics/
-│   │       ├── generate-song/
+│   │       ├── generate-song/          # sólo envía el job a Apiframe
+│   │       ├── song-status/[jobId]/    # poll de estado + guarda el resultado
 │   │       ├── checkout/
 │   │       ├── mercadopago/webhook/
 │   │       └── download/[orderId]/(lyrics)/

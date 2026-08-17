@@ -52,10 +52,13 @@ create table if not exists songs (
   lyrics text,
   preview_url text, -- Suno-hosted audio URL used for the 30s gated preview player
   full_url text,     -- Supabase Storage object path for the paid full track (set after payment)
+  apiframe_job_id text, -- Apiframe /v2/jobs/:id job id, polled by /api/song-status/[jobId]
   status text not null default 'generating'
     constraint songs_status_check
     check (status in ('generating', 'ready', 'failed'))
 );
+
+create index if not exists songs_apiframe_job_id_idx on songs(apiframe_job_id);
 
 create index if not exists songs_order_id_idx on songs(order_id);
 

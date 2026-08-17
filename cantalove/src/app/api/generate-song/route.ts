@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { generateSunoTrack } from "@/lib/apiframe";
-
-// Suno rendering can take a few minutes; give this route room to poll.
-// Requires a Vercel plan that supports extended function duration.
-export const maxDuration = 300;
+import { submitSunoGeneration } from "@/lib/apiframe";
 
 interface GenerateSongBody {
   orderId: string;
@@ -31,6 +27,9 @@ function isValidBody(body: unknown): body is GenerateSongBody {
   );
 }
 
+// Only submits the Suno job and returns the jobId — it does not wait for the
+// track to render. Poll /api/song-status/[jobId] for completion, so this
+// route stays well under any serverless function timeout.
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
     .single();
 
   try {
-    const clip = await generateSunoTrack({
+    const jobId = await submitSunoGeneration({
       lyrics,
       genre,
       voice,
@@ -76,32 +75,22 @@ export async function POST(request: Request) {
         : "cantalove",
     });
 
-    const { data: song, error: songError } = await supabase
+    const { error: songError } = await supabase
       .from("songs")
-      .update({ preview_url: clip.audioUrl, status: "ready" })
-      .eq("order_id", orderId)
-      .select("id")
-      .single();
+      .update({ apiframe_job_id: jobId, status: "generating" })
+      .eq("order_id", orderId);
 
-    if (songError || !song) {
-      console.error("Error guardando canción:", songError);
+    if (songError) {
+      console.error("Error guardando apiframe_job_id:", songError);
       return NextResponse.json(
-        { error: "No se pudo guardar la canción generada" },
+        { error: "No se pudo guardar el trabajo de generación" },
         { status: 500 }
       );
     }
 
-    await supabase
-      .from("orders")
-      .update({ status: "preview" })
-      .eq("id", orderId);
-
-    return NextResponse.json({
-      previewUrl: clip.audioUrl,
-      songId: song.id,
-    });
+    return NextResponse.json({ jobId });
   } catch (err) {
-    console.error("Error generando canción con Apiframe/Suno:", err);
+    console.error("Error enviando el trabajo a Apiframe/Suno:", err);
     await supabase
       .from("songs")
       .update({ status: "failed" })
@@ -111,7 +100,7 @@ export async function POST(request: Request) {
       .update({ status: "failed" })
       .eq("id", orderId);
     return NextResponse.json(
-      { error: "No se pudo generar la música" },
+      { error: "No se pudo iniciar la generación de música" },
       { status: 502 }
     );
   }

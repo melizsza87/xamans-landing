@@ -62,5 +62,6 @@ export interface Song {
   lyrics: string | null;
   preview_url: string | null;
   full_url: string | null;
+  apiframe_job_id: string | null;
   status: SongStatus;
 }

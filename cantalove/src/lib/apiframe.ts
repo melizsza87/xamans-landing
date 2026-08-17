@@ -1,19 +1,25 @@
 import "server-only";
 
 // Apiframe (https://docs.apiframe.ai) proxies the Suno music-generation API.
-// Generation is async: a submit call returns a task_id, and a /fetch call is
-// polled until the task's status flips to "finished" (or "failed"). Field
-// names below follow Apiframe's documented Suno endpoints as of this writing —
-// re-check them against docs.apiframe.ai/suno if Apiframe changes their contract.
+// Generation is async: POST /v2/music/generate returns a jobId immediately,
+// and GET /v2/jobs/:id is polled until the job's status is "finished" (or
+// "failed"). Every Suno-specific field (custom_mode, title, style,
+// vocal_gender, model_version, instrumental) must live inside sunoParams —
+// the top level only accepts prompt, model, webhookUrl, and webhookEvents.
 
-const API_BASE = process.env.APIFRAME_API_BASE || "https://api.apiframe.pro";
-const POLL_INTERVAL_MS = 5000;
-const POLL_TIMEOUT_MS = 5 * 60 * 1000; // Suno renders usually finish in 1-3 minutes
+const API_BASE = process.env.APIFRAME_API_BASE || "https://api.apiframe.ai";
 
 function apiKey() {
   const key = process.env.APIFRAME_API_KEY;
   if (!key) throw new Error("Missing APIFRAME_API_KEY environment variable");
   return key;
+}
+
+function authHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "X-API-Key": apiKey(),
+  };
 }
 
 interface GenerateSongInput {
@@ -24,39 +30,58 @@ interface GenerateSongInput {
   title: string;
 }
 
-export interface SunoClip {
-  id: string;
-  audioUrl: string;
-}
+export type ApiframeJobStatus = "pending" | "processing" | "finished" | "failed";
 
 interface SubmitResponse {
-  task_id: string;
+  jobId: string;
 }
 
-interface FetchResponse {
-  task_id: string;
-  status: "pending" | "processing" | "finished" | "failed";
+export interface ApiframeTrack {
+  audioUrl?: string;
+}
+
+export interface ApiframeJob {
+  jobId: string;
+  status: ApiframeJobStatus;
   error?: string;
-  clips?: Array<{ id: string; audio_url?: string; audio?: string }>;
+  result?: {
+    tracks?: ApiframeTrack[];
+  };
 }
 
 function buildStylePrompt({ genre, voice, duration }: GenerateSongInput) {
   return `${genre} romántico en español, voz ${voice}, tempo ${duration}, instrumentación auténtica latina, emocionalmente poderoso, producción profesional, sin intro hablada`;
 }
 
-async function submitGeneration(input: GenerateSongInput): Promise<string> {
-  const res = await fetch(`${API_BASE}/suno/custom-generate`, {
+// Apiframe's sunoParams.vocal_gender expects "female" | "male" | "duet" —
+// re-check against docs.apiframe.ai if this mapping changes.
+function mapVocalGender(voice: string): string {
+  const normalized = voice.trim().toLowerCase();
+  if (normalized === "masculina") return "male";
+  if (normalized === "dueto") return "duet";
+  return "female";
+}
+
+// Submits a Suno generation job. Returns immediately with a jobId — the
+// actual audio is produced asynchronously and must be polled for via
+// getJobStatus (see /api/song-status/[jobId]).
+export async function submitSunoGeneration(
+  input: GenerateSongInput
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/v2/music/generate`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: apiKey(),
-    },
+    headers: authHeaders(),
     body: JSON.stringify({
-      custom_mode: true,
       prompt: input.lyrics,
-      tags: buildStylePrompt(input),
-      title: input.title,
-      make_instrumental: false,
+      model: "suno",
+      sunoParams: {
+        custom_mode: true,
+        title: input.title,
+        style: buildStylePrompt(input),
+        vocal_gender: mapVocalGender(input.voice),
+        model_version: process.env.APIFRAME_MODEL_VERSION || "v4_5plus",
+        instrumental: false,
+      },
     }),
   });
 
@@ -67,60 +92,26 @@ async function submitGeneration(input: GenerateSongInput): Promise<string> {
   }
 
   const data = (await res.json()) as SubmitResponse;
-  if (!data.task_id) {
-    throw new Error("Apiframe submit response missing task_id");
+  if (!data.jobId) {
+    throw new Error("Apiframe submit response missing jobId");
   }
-  return data.task_id;
+  return data.jobId;
 }
 
-async function fetchTask(taskId: string): Promise<FetchResponse> {
-  const res = await fetch(`${API_BASE}/fetch`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: apiKey(),
-    },
-    body: JSON.stringify({ task_id: taskId }),
+// Fetches the current status of a previously submitted job. When
+// status === "finished", result.tracks[0].audioUrl / tracks[1].audioUrl
+// hold the two generated versions.
+export async function getJobStatus(jobId: string): Promise<ApiframeJob> {
+  const res = await fetch(`${API_BASE}/v2/jobs/${jobId}`, {
+    method: "GET",
+    headers: authHeaders(),
   });
 
   if (!res.ok) {
     throw new Error(
-      `Apiframe fetch failed: ${res.status} ${await res.text()}`
+      `Apiframe job fetch failed: ${res.status} ${await res.text()}`
     );
   }
 
-  return (await res.json()) as FetchResponse;
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Submits a Suno generation job and polls until it completes, returning the
-// generated clip. Throws if the job fails or exceeds POLL_TIMEOUT_MS.
-export async function generateSunoTrack(
-  input: GenerateSongInput
-): Promise<SunoClip> {
-  const taskId = await submitGeneration(input);
-  const deadline = Date.now() + POLL_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    await sleep(POLL_INTERVAL_MS);
-    const task = await fetchTask(taskId);
-
-    if (task.status === "failed") {
-      throw new Error(task.error || "La generación de la canción falló");
-    }
-
-    if (task.status === "finished") {
-      const clip = task.clips?.[0];
-      const audioUrl = clip?.audio_url || clip?.audio;
-      if (!clip || !audioUrl) {
-        throw new Error("Apiframe no devolvió un clip de audio");
-      }
-      return { id: clip.id, audioUrl };
-    }
-  }
-
-  throw new Error("Tiempo de espera agotado generando la canción");
+  return (await res.json()) as ApiframeJob;
 }

@@ -75,6 +75,7 @@ export interface Database {
           lyrics: string | null;
           preview_url: string | null;
           full_url: string | null;
+          apiframe_job_id: string | null;
           status: string;
         };
         Insert: {
@@ -83,6 +84,7 @@ export interface Database {
           lyrics?: string | null;
           preview_url?: string | null;
           full_url?: string | null;
+          apiframe_job_id?: string | null;
           status?: string;
         };
         Update: {
@@ -91,6 +93,7 @@ export interface Database {
           lyrics?: string | null;
           preview_url?: string | null;
           full_url?: string | null;
+          apiframe_job_id?: string | null;
           status?: string;
         };
         Relationships: [];
