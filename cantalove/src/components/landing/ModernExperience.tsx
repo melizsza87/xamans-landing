@@ -37,7 +37,9 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
   return <div className={heartbreak ? "rev-site rev-breakup":"rev-site rev-love"}>
     <header className="rev-header">
       <Link href={ownHome} className="rev-logo" aria-label={heartbreak?"Inicio Cantalovergas":"Inicio Cantalove"}>
-        canta<span>{heartbreak?"lovergas":"love"}</span>
+        canta<span>{heartbreak?"loverga":"love"}</span>{heartbreak
+          ? <svg className="rev-logo-mark rev-logo-tail" viewBox="0 0 42 58" aria-hidden="true"><path d="M3 6 C30 12 35 27 25 39 C19 47 13 43 16 36 M25 39 L40 34 L35 49 Z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/><path d="M35 33 L41 50 L26 42 Z" fill="currentColor"/></svg>
+          : <svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </Link>
       <nav className="rev-nav" aria-label="Navegación principal">
         <a href="#momentos">{heartbreak?"Historias":"Ocasiones"}</a>

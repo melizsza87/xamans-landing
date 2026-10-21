@@ -222,3 +222,10 @@
   .rev-logo { font-size: 24px; }
   .rev-top-cta { padding: 10px 12px; }
 }
+
+/* Approved identity additions: integrated heart and devil-tail signatures. */
+.rev-logo { display:inline-flex; align-items:baseline; white-space:nowrap; letter-spacing:-.055em; }
+.rev-logo-mark { display:inline-block; flex-shrink:0; vertical-align:baseline; position:relative; }
+.rev-logo-heart { width:.47em; height:.5em; margin-left:.02em; top:.08em; color:#e92e64; }
+.rev-logo-tail { width:.43em; height:.58em; margin-left:-.08em; top:.11em; color:#d8ff36; }
+@media(max-width:390px){.rev-logo-heart{width:.43em}.rev-logo-tail{width:.38em}}
