@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import "./modern.css";
+import "./review.css";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
