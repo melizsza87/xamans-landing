@@ -89,3 +89,11 @@
 .brand-love .border-white\/10 {border-color:#edd9dc}
 .brand-love .border-white\/15 {border-color:#e5cdd0}
 .brand-breakup {background:#101112;min-height:100vh}
+
+/* Editorial duet: equal space for her confidence and his tequila toast. */
+.modern-hero-duo {display:flex;overflow:hidden}
+.modern-hero-duo .modern-duo-photo {flex:1;min-width:0;display:block;background-size:cover;background-position:center center;background-color:#542b30}
+.modern-hero-duo .modern-duo-photo:nth-child(2) {background-position:center 40%}
+.modern-hero-duo:before {z-index:1;pointer-events:none}
+.modern-hero-duo .modern-photo-label {z-index:2}
+@media(max-width:640px){.modern-hero-duo .modern-duo-photo{min-height:330px}}

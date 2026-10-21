@@ -4,14 +4,14 @@ import type { CSSProperties } from "react";
 type OccasionCard = { name: string; desc: string; img: string; href: string };
 const loveCards: OccasionCard[] = [
   { name: "Amor", desc: "Cuando las palabras se quedan cortas", img: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80", href: "/crear?occasion=Aniversario" },
-  { name: "Boda / Vals", desc: "La canción de su primer baile", img: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80", href: "/crear?occasion=Boda%2FVals" },
+  { name: "Boda / Vals", desc: "La canción de su primer baile", img: "https://images.pexels.com/photos/29002703/pexels-photo-29002703.jpeg?auto=compress&cs=tinysrgb&w=900", href: "/crear?occasion=Boda%2FVals" },
   { name: "Celebración", desc: "Cumpleaños y momentos especiales", img: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=900&q=80", href: "/crear?occasion=Cumpleaños" },
   { name: "Familia", desc: "El amor en todas sus formas", img: "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80", href: "/crear?occasion=Día%20de%20las%20Madres" },
 ];
 const heartbreakCards: OccasionCard[] = [
   { name: "Ex tóxico", desc: "Para cerrar el capítulo", img: "https://images.unsplash.com/photo-1533038590840-1cde6fa4e1a6?auto=format&fit=crop&w=900&q=80", href: "/crear/despecho" },
   { name: "Me mintió", desc: "Para decir lo que no dijiste", img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80", href: "/crear/despecho" },
-  { name: "Tequila y despecho", desc: "La cantamos, brindamos y seguimos", img: "https://unsplash.com/photos/a-man-sitting-at-a-table-with-a-bottle-of-alcohol-1WDKJW0R_8A/download?w=900", href: "/crear/despecho" },
+  { name: "Tequila y despecho", desc: "La cantamos, brindamos y seguimos", img: "https://images.pexels.com/photos/8919698/pexels-photo-8919698.jpeg?auto=compress&cs=tinysrgb&w=900", href: "/crear/despecho" },
   { name: "Ahora estoy mejor", desc: "Porque seguir adelante también se canta", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=80", href: "/crear/despecho" },
 ];
 
@@ -33,8 +33,8 @@ export function ModernExperience({ mode }: { mode: "love" | "breakup" }) {
   const create = sad ? "/crear/despecho" : "/crear";
   const other = sad ? "/" : "/rgas";
   const heroPhoto = sad
-    ? "https://unsplash.com/photos/a-man-sitting-at-a-table-with-a-bottle-of-alcohol-1WDKJW0R_8A/download?w=1400"
-    : "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1500&q=84";
+    ? "https://images.pexels.com/photos/8919698/pexels-photo-8919698.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    : "https://images.pexels.com/photos/29002703/pexels-photo-29002703.jpeg?auto=compress&cs=tinysrgb&w=1500";
   const photoStyle = (url: string): CSSProperties => ({ backgroundImage: "url('" + url + "')" });
   return (
     <div className={sad ? "modern-site breakup-site" : "modern-site love-site"}>
@@ -69,7 +69,8 @@ export function ModernExperience({ mode }: { mode: "love" | "breakup" }) {
               <span>♪ Canción personalizada</span><span>♡ Escucha antes de comprar</span><span>↗ Envío anónimo opcional</span>
             </div>
           </div>
-          <div className="modern-hero-photo" style={photoStyle(heroPhoto)} role="img" aria-label={sad ? "Hombre disfrutando de tequila, inspirado en noches de despecho" : "Pareja en una celebración de boda, inspiración para un vals personalizado"}>
+          <div className={sad ? "modern-hero-photo modern-hero-duo" : "modern-hero-photo"} style={sad ? undefined : photoStyle(heroPhoto)} role="img" aria-label={sad ? "Mujer con lentes de sol y hombre con tequila, dos caras del despecho" : "Novios bailando su primer vals en la boda"}>
+            {sad && <><span className="modern-duo-photo" style={photoStyle("https://images.pexels.com/photos/20351870/pexels-photo-20351870.jpeg?auto=compress&cs=tinysrgb&w=850")} /><span className="modern-duo-photo" style={photoStyle(heroPhoto)} /></>}
             <div className="modern-photo-label">{sad ? "Por lo que dolió. Y por lo que viene." : "Un vals para recordar toda la vida."}</div>
           </div>
         </section>
