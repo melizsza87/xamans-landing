@@ -14,7 +14,7 @@ export async function GET(
 
   const { data: song, error: songError } = await supabase
     .from("songs")
-    .select("id, order_id, status, preview_url")
+    .select("id, order_id, status, preview_url, alternate_url")
     .eq("apiframe_job_id", jobId)
     .single();
 
@@ -24,7 +24,7 @@ export async function GET(
 
   // Already resolved in a previous poll — avoid hitting Apiframe again.
   if (song.status === "ready" && song.preview_url) {
-    return NextResponse.json({ status: "ready", audioUrl: song.preview_url });
+    return NextResponse.json({ status: "ready", audioUrl: song.preview_url, audioUrl2: song.alternate_url });
   }
   if (song.status === "failed") {
     return NextResponse.json({ status: "failed" });
@@ -67,7 +67,7 @@ export async function GET(
 
   await supabase
     .from("songs")
-    .update({ preview_url: audioUrl, status: "ready" })
+    .update({ preview_url: audioUrl, alternate_url: audioUrl2 || null, status: "ready" })
     .eq("id", song.id);
 
   await supabase

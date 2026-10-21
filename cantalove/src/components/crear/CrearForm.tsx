@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 const OCCASIONS = [
+  "Despecho",
   "San Valentín",
   "Día de las Madres",
   "Boda/Vals",
@@ -23,6 +24,8 @@ const GENRES = [
   "Banda",
   "Mariachi",
   "Vals clásico",
+  "Corrido tumbado",
+  "Regional mexicano",
 ];
 
 const VOICES = ["Femenina", "Masculina", "Dueto"];
@@ -84,6 +87,7 @@ async function waitForSongReady(
 
 interface FormState {
   occasion: string;
+  email: string;
   names: string;
   story: string;
   genre: string;
@@ -93,6 +97,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
   occasion: OCCASIONS[0],
+  email: "",
   names: "",
   story: "",
   genre: GENRES[0],
@@ -109,6 +114,12 @@ const labelClass = "block text-sm font-medium text-text mb-2";
 export function CrearForm() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  // The form is visible for design testing; real API generation requires private keys.
+  // The server also enforces this independently on every generation request.
+  // The status endpoint never reveals credentials.
+
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -145,10 +156,6 @@ export function CrearForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
-          lyrics,
-          genre: form.genre,
-          voice: form.voice,
-          duration: form.duration,
         }),
       });
 
@@ -191,6 +198,12 @@ export function CrearForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className={labelClass} htmlFor="email">Tu correo para recibir la canción</label>
+        <input id="email" type="email" maxLength={254} autoComplete="email" required className={inputClass}
+          placeholder="tu@correo.com" value={form.email} onChange={(e) => update("email", e.target.value)} />
+        <p className="mt-2 text-xs text-text-muted">Una generación gratuita por correo. Utilizaremos tu dirección para entregarte tu canción.</p>
+      </div>
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="occasion">
@@ -218,6 +231,7 @@ export function CrearForm() {
             id="names"
             className={inputClass}
             placeholder="Ej. Ana y Miguel"
+            maxLength={120}
             value={form.names}
             onChange={(e) => update("names", e.target.value)}
             required
@@ -233,6 +247,7 @@ export function CrearForm() {
           id="story"
           className={`${inputClass} min-h-[160px] resize-y`}
           placeholder="Cuéntanos su historia con el mayor detalle posible..."
+          maxLength={1800}
           value={form.story}
           onChange={(e) => update("story", e.target.value)}
           required
