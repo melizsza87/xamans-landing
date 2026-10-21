@@ -14,19 +14,19 @@ export const TIERS: Record<Tier, TierInfo> = {
     id: "basic",
     name: "Básico",
     amountCents: 24900,
-    features: ["Instrumental", "1 versión", "MP3"],
+    features: ["Canción cantada personalizada", "1 versión", "Archivo MP3"],
   },
   premium: {
     id: "premium",
     name: "Premium",
     amountCents: 44900,
-    features: ["Con letra personalizada", "2 versiones", "MP3 + PDF letra"],
+    features: ["Letra personalizada", "2 versiones musicales", "2 MP3 + PDF de letra"],
   },
   vip: {
     id: "vip",
     name: "VIP",
     amountCents: 89900,
-    features: ["Revisiones ilimitadas", "Stems", "Versión sin letra"],
+    features: ["Disponible próximamente"],
   },
 };
 

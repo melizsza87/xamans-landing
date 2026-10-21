@@ -114,11 +114,6 @@ const labelClass = "block text-sm font-medium text-text mb-2";
 export function CrearForm() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
-  const [isAvailable, setIsAvailable] = useState(true);
-
-  // The form is visible for design testing; real API generation requires private keys.
-  // The server also enforces this independently on every generation request.
-  // The status endpoint never reveals credentials.
 
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);

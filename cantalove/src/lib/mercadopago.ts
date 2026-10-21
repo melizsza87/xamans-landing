@@ -100,7 +100,16 @@ export function verifyWebhookSignature({
   return crypto.timingSafeEqual(expectedBuf, actualBuf);
 }
 
-export async function fetchPayment(paymentId: string) {
+export interface VerifiedMpPayment {
+  status: string;
+  external_reference: string | null;
+  currency_id: string;
+  transaction_amount: number;
+  preference_id?: string | null;
+  payer?: { email?: string };
+}
+
+export async function fetchPayment(paymentId: string): Promise<VerifiedMpPayment> {
   const accessToken = process.env.MP_ACCESS_TOKEN;
   const res = await fetch(
     `https://api.mercadopago.com/v1/payments/${paymentId}`,
@@ -109,5 +118,5 @@ export async function fetchPayment(paymentId: string) {
   if (!res.ok) {
     throw new Error(`No se pudo consultar el pago ${paymentId}: ${res.status}`);
   }
-  return res.json();
+  return (await res.json()) as VerifiedMpPayment;
 }

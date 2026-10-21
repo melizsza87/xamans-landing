@@ -8,11 +8,12 @@ export async function GET(
   { params }: RouteContext<"/api/download/[orderId]">
 ) {
   const { orderId } = await params;
+  const variant = new URL(_request.url).searchParams.get("version");
   const supabase = supabaseAdmin();
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status")
+    .select("id, status, tier")
     .eq("id", orderId)
     .single();
 
@@ -29,7 +30,7 @@ export async function GET(
 
   const { data: song, error: songError } = await supabase
     .from("songs")
-    .select("full_url")
+    .select("full_url, alternate_file")
     .eq("order_id", orderId)
     .single();
 
@@ -40,9 +41,14 @@ export async function GET(
     );
   }
 
+  if (variant === "alternate" && order.tier !== "premium") {
+    return NextResponse.json({ error: "Versión alternativa no incluida" }, { status: 403 });
+  }
+  const path = variant === "alternate" ? song.alternate_file : song.full_url;
+  if (!path) return NextResponse.json({ error: "La segunda versión aún no está disponible" }, { status: 404 });
   const { data: signed, error: signError } = await supabase.storage
     .from("tracks")
-    .createSignedUrl(song.full_url as string, SIGNED_URL_TTL_SECONDS);
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   if (signError || !signed) {
     console.error("Error generando URL firmada:", signError);

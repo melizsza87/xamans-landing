@@ -48,6 +48,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
   }
 
+  // VIP needs stems and manual revisions, not implemented in the MVP.
+  if (tier === "vip") return NextResponse.json({ error: "VIP estará disponible próximamente" }, { status: 400 });
+  if (order.status !== "preview") return NextResponse.json({ error: "La canción todavía no está lista para pago" }, { status: 409 });
   const tierInfo = TIERS[tier];
 
   try {

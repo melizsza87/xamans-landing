@@ -51,6 +51,7 @@ export default async function DescargaPage({
                   orderId={orderId}
                   names={names}
                   showLyricsPdf={order.tier === "premium" || order.tier === "vip"}
+                  showAlternate={order.tier === "premium"}
                 />
               </div>
             </>
@@ -63,8 +64,7 @@ export default async function DescargaPage({
                 Todavía no confirmamos tu pago
               </h1>
               <p className="mt-4 text-text-muted">
-                En cuanto MercadoPago confirme el pago, esta página se
-                actualizará automáticamente con tu descarga. Si ya pagaste,
+                En cuanto MercadoPago confirme el pago, la descarga estará disponible con tu descarga. Si ya pagaste,
                 recarga en unos segundos.
               </p>
             </>

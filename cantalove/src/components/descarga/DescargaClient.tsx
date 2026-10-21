@@ -6,22 +6,24 @@ interface DescargaClientProps {
   orderId: string;
   names: string;
   showLyricsPdf: boolean;
+  showAlternate: boolean;
 }
 
 export function DescargaClient({
   orderId,
   names,
   showLyricsPdf,
+  showAlternate,
 }: DescargaClientProps) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
 
-  async function handleDownload() {
+  async function handleDownload(variant: "primary" | "alternate" = "primary") {
     setError(null);
     setDownloading(true);
     try {
-      const res = await fetch(`/api/download/${orderId}`);
+      const res = await fetch(`/api/download/${orderId}${variant === "alternate" ? "?version=alternate" : ""}`);
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error || "No se pudo generar la descarga");
@@ -64,12 +66,19 @@ export function DescargaClient({
     <div className="space-y-4">
       <button
         type="button"
-        onClick={handleDownload}
+        onClick={() => handleDownload()}
         disabled={downloading}
         className="w-full inline-flex justify-center items-center rounded-full bg-accent hover:bg-accent-soft disabled:opacity-60 transition-colors px-8 py-4 text-base font-semibold text-text"
       >
         {downloading ? "Preparando descarga..." : "Descargar canción completa (MP3)"}
       </button>
+
+      {showAlternate && (
+        <button type="button" onClick={() => handleDownload("alternate")} disabled={downloading}
+          className="w-full rounded-full border border-white/20 px-8 py-4 font-semibold text-text">
+          Descargar segunda versión (MP3)
+        </button>
+      )}
 
       {showLyricsPdf && (
         <a
