@@ -165,3 +165,9 @@ cantalove/
 - La política de 1 canción gratuita por email no constituye verificación de identidad y por sí sola no previene abuso por bots. Incorporar desafío antiabuso / verificación de correo y limitación por IP antes de habilitar generación masiva.
 - VIP y stems no disponibles en MVP. El paquete VIP no se muestra.
 - Mantener en preview hasta completar pruebas y autorización de GitHub para Vercel.
+
+## Envío anónimo
+- El comprador puede compartir un enlace sin nombre desde su pantalla de descarga. La app no envía correos a terceros ni almacena su dirección.
+- El destinatario tiene un reproductor vinculado a un token aleatorio, cuya versión hash vive en `anonymous_shares`; volver a generar el enlace invalida el anterior.
+- Avisar que la letra puede revelar detalles identificables, que el enlace no equivale a anonimato absoluto y que el destinatario puede reportar contenido.
+- El envío anónimo debe someterse a pruebas antiacoso, inspección del enlace y moderación antes de lanzamiento público.

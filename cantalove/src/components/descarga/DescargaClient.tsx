@@ -18,6 +18,7 @@ export function DescargaClient({
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
+  const [anonymousBusy, setAnonymousBusy] = useState(false);
 
   async function handleDownload(variant: "primary" | "alternate" = "primary") {
     setError(null);
@@ -62,6 +63,33 @@ export function DescargaClient({
     }
   }
 
+  async function shareAnonymously() {
+    setError(null);
+    setAnonymousBusy(true);
+    try {
+      const response = await fetch("/api/share", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId }) });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.error || "No se pudo preparar el enlace anónimo");
+      }
+      const { shareUrl } = await response.json();
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Te dedicaron una canción", text: "Hay una canción para ti. Escúchala aquí:", url: shareUrl });
+          return;
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+        }
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setShared(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo compartir");
+    } finally {
+      setAnonymousBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <button
@@ -96,6 +124,16 @@ export function DescargaClient({
       >
         {shared ? "Enlace copiado" : "Compartir enlace privado"}
       </button>
+
+      <section className="rounded-2xl border border-rose-300/25 bg-rose-200/10 px-5 py-5 text-left">
+        <h2 className="font-semibold text-text">¿Quieres enviarla sin decir quién eres?</h2>
+        <p className="mt-2 text-sm text-text-muted">Creamos un enlace anónimo para compartirlo tú por WhatsApp, mensaje o correo. No enviamos mensajes automáticos a otras personas.</p>
+        <p className="mt-2 text-xs text-text-muted">Revisa la letra antes: podría revelar detalles de tu historia. No compartas contenido para acosar, amenazar o suplantar.</p>
+        <button type="button" disabled={anonymousBusy} onClick={shareAnonymously}
+          className="mt-4 w-full rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white disabled:opacity-60">
+          {anonymousBusy ? "Preparando enlace..." : shared ? "Enlace anónimo copiado" : "Enviar canción anónimamente"}
+        </button>
+      </section>
 
       {error && (
         <p className="text-center text-sm text-accent-soft">{error}</p>

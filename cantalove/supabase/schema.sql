@@ -93,3 +93,12 @@ alter table free_generations enable row level security;
 -- Prevent duplicate order numbers in the third-party payment system.
 create unique index if not exists orders_mp_payment_id_unique
   on orders(mp_payment_id) where mp_payment_id is not null;
+
+-- Anonymous, tokenized links created by buyers after approved payment.
+-- No recipient email or sender identity is stored in this table.
+create table if not exists anonymous_shares (
+  order_id uuid primary key references orders(id) on delete cascade,
+  token_hash text not null unique,
+  created_at timestamptz not null default now()
+);
+alter table anonymous_shares enable row level security;

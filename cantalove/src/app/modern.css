@@ -63,9 +63,9 @@
 .modern-footer {padding:28px clamp(20px,5vw,80px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--m-muted)}
 .modern-footer .modern-logo {font-size:24px}
 .modern-footer a:last-child {color:var(--m-acc);font-weight:700}
-.breakup-site {--m-ink:#fff7ee;--m-acc:#e8ff55;--m-paper:#0e1011;--m-soft:#1c1e1d;--m-muted:#c8c4bd;--m-card:#181a19;}
-.breakup-site .modern-logo span {color:#e8ff55}
-.breakup-site .modern-nav-cta,.breakup-site .modern-cta,.breakup-site .modern-price-cta {color:#151818}
+.breakup-site {--m-ink:#fff7ee;--m-acc:#f02d48;--m-paper:#0e1011;--m-soft:#1c1e1d;--m-muted:#c8c4bd;--m-card:#181a19;}
+.breakup-site .modern-logo span {color:#f02d48}
+.breakup-site .modern-nav-cta,.breakup-site .modern-cta,.breakup-site .modern-price-cta {color:#fff}
 .breakup-site .modern-hero-photo {background-color:#3d2727}
 .breakup-site .modern-hero-photo:before {background:linear-gradient(0deg,rgba(0,0,0,.7),rgba(0,0,0,.04) 60%)}
 .breakup-site .modern-photo-card {background:#4b252c}

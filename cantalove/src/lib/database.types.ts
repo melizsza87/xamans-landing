@@ -104,6 +104,12 @@ export interface Database {
         };
         Relationships: [];
       };
+      anonymous_shares: {
+        Row: { order_id: string; token_hash: string; created_at: string };
+        Insert: { order_id: string; token_hash: string; created_at?: string };
+        Update: { order_id?: string; token_hash?: string; created_at?: string };
+        Relationships: [];
+      };
       free_generations: {
         Row: { email_hash: string; order_id: string; created_at: string };
         Insert: { email_hash: string; order_id: string; created_at?: string };
