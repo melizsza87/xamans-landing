@@ -59,7 +59,7 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
             <Link className="rev-button" href={createHref}>Crear mi canción <span aria-hidden>→</span></Link>
             <div className="rev-proof"><span>♬ Hecha a tu medida</span><span>✦ Escúchala primero</span><span>♡ Envío anónimo</span></div>
           </div>
-          <p className="rev-scribble">Porque<br/>también se<br/>canta lo que<br/>duele ♡</p>
+          
         </section>
       :
         <section className="rev-hero rev-hero-love">
@@ -70,7 +70,7 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
             <Link className="rev-button" href={createHref}>Crear mi canción <span aria-hidden>→</span></Link>
             <div className="rev-proof"><span>♫ Personalizada</span><span>♡ Escúchala primero</span><span>🎁 Para regalar</span></div>
           </div>
-          <p className="rev-scribble">Tu historia,<br/>en una canción ♡</p>
+          
         </section>
       }
 
