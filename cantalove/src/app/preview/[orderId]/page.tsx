@@ -21,7 +21,7 @@ export default async function PreviewPage({
   const [{ data: song }, { data: personalization }] = await Promise.all([
     supabase
       .from("songs")
-      .select("preview_url, lyrics, status")
+      .select("preview_url, alternate_url, lyrics, status")
       .eq("order_id", orderId)
       .single(),
     supabase
@@ -43,6 +43,7 @@ export default async function PreviewPage({
               orderId={orderId}
               previewUrl={song.preview_url}
               lyrics={song.lyrics || ""}
+              hasAlternate={Boolean(song.alternate_url)}
               names={names}
             />
           ) : song?.status === "failed" || order.status === "failed" ? (

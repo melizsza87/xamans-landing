@@ -40,6 +40,12 @@ export async function POST(request: Request) {
     console.error("No se pudo iniciar generación musical", err);
     await supabase.from("songs").update({ status: "failed" }).eq("order_id", orderId);
     await supabase.from("orders").update({ status: "failed" }).eq("id", orderId);
+    const { data: account } = await supabase.from("orders").select("contact_email").eq("id", orderId).single();
+    if (account?.contact_email && process.env.FREE_EMAIL_HASH_SECRET) {
+      const { createHmac } = await import("node:crypto");
+      const key = createHmac("sha256", process.env.FREE_EMAIL_HASH_SECRET).update(account.contact_email.trim().toLowerCase()).digest("hex");
+      await supabase.from("free_generations").delete().eq("email_hash", key).eq("order_id", orderId);
+    }
     return NextResponse.json({ error: "No se pudo iniciar la canción. Escríbenos para ayudarte." }, { status: 502 });
   }
 }

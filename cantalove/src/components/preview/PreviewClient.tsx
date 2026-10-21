@@ -11,6 +11,7 @@ interface PreviewClientProps {
   previewUrl: string;
   lyrics: string;
   names: string;
+  hasAlternate: boolean;
 }
 
 export function PreviewClient({
@@ -18,6 +19,7 @@ export function PreviewClient({
   previewUrl,
   lyrics,
   names,
+  hasAlternate,
 }: PreviewClientProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -133,6 +135,7 @@ export function PreviewClient({
       </section>
 
       <section>
+        {!hasAlternate && <p className="mb-6 text-center text-sm text-text-muted">Por ahora sólo se generó una versión. El paquete Premium aparecerá cuando haya dos canciones disponibles.</p>}
         <h2 className="font-display text-2xl sm:text-3xl text-center text-text">
           ¿Quieres llevarte tu canción?
         </h2>
@@ -142,7 +145,7 @@ export function PreviewClient({
           </p>
         )}
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {TIER_ORDER.map((id) => {
+          {TIER_ORDER.filter(id => id !== "premium" || hasAlternate).map((id) => {
             const tier = TIERS[id];
             const featured = id === "premium";
             const isSelecting = selectingTier === id;

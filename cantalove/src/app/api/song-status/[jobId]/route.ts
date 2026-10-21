@@ -42,6 +42,12 @@ export async function GET(
   }
 
   if (job.status === "failed") {
+    const { data: account } = await supabase.from("orders").select("contact_email").eq("id", song.order_id).single();
+    if (account?.contact_email && process.env.FREE_EMAIL_HASH_SECRET) {
+      const { createHmac } = await import("node:crypto");
+      const key = createHmac("sha256", process.env.FREE_EMAIL_HASH_SECRET).update(account.contact_email.trim().toLowerCase()).digest("hex");
+      await supabase.from("free_generations").delete().eq("email_hash", key).eq("order_id", song.order_id);
+    }
     await supabase.from("songs").update({ status: "failed" }).eq("id", song.id);
     await supabase
       .from("orders")
