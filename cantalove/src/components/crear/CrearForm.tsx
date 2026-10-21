@@ -96,7 +96,7 @@ interface FormState {
 }
 
 const INITIAL_STATE: FormState = {
-  occasion: OCCASIONS[0],
+  occasion: "Aniversario",
   email: "",
   names: "",
   story: "",
@@ -111,9 +111,9 @@ const inputClass =
   "w-full rounded-xl bg-surface/60 border border-white/15 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:border-accent-soft transition-colors";
 const labelClass = "block text-sm font-medium text-text mb-2";
 
-export function CrearForm() {
+export function CrearForm({ initialOccasion = "Aniversario" }: { initialOccasion?: string }) {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(INITIAL_STATE);
+  const [form, setForm] = useState<FormState>({ ...INITIAL_STATE, occasion: initialOccasion });
 
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -142,7 +142,7 @@ export function CrearForm() {
         throw new Error(body?.error || "No se pudo generar la letra");
       }
 
-      const { lyrics, orderId } = await lyricsRes.json();
+      const { orderId } = await lyricsRes.json();
 
       setLoadingStep(1);
 

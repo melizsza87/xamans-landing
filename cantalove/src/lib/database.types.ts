@@ -97,6 +97,8 @@ export interface Database {
           lyrics?: string | null;
           preview_url?: string | null;
           full_url?: string | null;
+          alternate_url?: string | null;
+          alternate_file?: string | null;
           apiframe_job_id?: string | null;
           status?: string;
         };

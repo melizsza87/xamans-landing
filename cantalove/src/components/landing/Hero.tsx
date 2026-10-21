@@ -26,6 +26,12 @@ export function Hero() {
               >
                 Crear mi canción
               </Link>
+              <Link
+                href="/rgas"
+                className="inline-flex justify-center items-center rounded-full border border-white/15 hover:border-white/35 transition-colors px-8 py-4 text-sm sm:text-base font-semibold text-text"
+              >
+                ¿Te rompieron el corazón?
+              </Link>
               <a
                 href="#precios"
                 className="inline-flex justify-center items-center rounded-full border border-white/15 hover:border-white/35 transition-colors px-8 py-4 text-sm sm:text-base font-semibold text-text"
