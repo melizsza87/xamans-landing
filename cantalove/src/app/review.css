@@ -143,3 +143,11 @@
   .wedding-option {padding:26px 22px}
   .wedding-option p {max-width:350px}
 }
+
+/* Original images, extracted from brand-approved compositions: no replacement photographs. */
+.rev-love .rev-hero-visual { background-color:#f1d4cb;background-size:auto 100%;background-position:right center;background-repeat:no-repeat; }
+.rev-breakup .rev-hero-visual { background-color:#245d88;background-size:auto 100%;background-position:right center;background-repeat:no-repeat; }
+@media(max-width:700px){
+.rev-love .rev-hero-visual { background-size:auto 100%;background-position:center center; }
+.rev-breakup .rev-hero-visual { background-size:auto 100%;background-position:right center; }
+}
