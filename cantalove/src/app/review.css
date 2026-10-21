@@ -229,3 +229,13 @@
 .rev-logo-heart { width:.47em; height:.5em; margin-left:.02em; top:.08em; color:#e92e64; }
 .rev-logo-tail { width:.43em; height:.58em; margin-left:-.08em; top:.11em; color:#d8ff36; }
 @media(max-width:390px){.rev-logo-heart{width:.43em}.rev-logo-tail{width:.38em}}
+
+/* Approved hero assets: preserve the full subjects on mobile, including the tequila drinker. */
+@media(max-width:700px){
+  .rev-site .rev-hero-picture{height:auto;min-height:0;aspect-ratio:765 / 512;background-color:#245d88;}
+  .rev-love .rev-hero-picture{background-color:#f3ded3;}
+  .rev-site .rev-hero-picture img{height:100%;width:100%;object-fit:contain;object-position:center center;}
+}
+.rev-logo-heart{width:.67em;height:.72em;margin-left:.035em;top:.12em;stroke-width:3;}
+.rev-logo-tail{width:.64em;height:.79em;margin-left:-.10em;top:.19em;}
+@media(max-width:390px){.rev-logo-heart{width:.62em}.rev-logo-tail{width:.59em}}

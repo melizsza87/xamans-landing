@@ -25,8 +25,8 @@ const tiers = [
   {name:"Premium",amount:"$449",features:["Dos versiones cuando estén disponibles","Descarga de ambas versiones","Letra en PDF"]},
 ];
 const bg = (url: string): CSSProperties => ({backgroundImage:'url("'+url+'")'});
-const heroLove = "https://images.pexels.com/photos/8575560/pexels-photo-8575560.jpeg?auto=compress&cs=tinysrgb&w=1800";
-const heroWoman = "https://images.pexels.com/photos/29400911/pexels-photo-29400911.jpeg?auto=compress&cs=tinysrgb&w=1800";
+const heroLove = "/approved/cantalove-hero.webp";
+const heroWoman = "/approved/cantalovergas-hero.webp";
 const heroTequila = "https://images.pexels.com/photos/7269234/pexels-photo-7269234.jpeg?auto=compress&cs=tinysrgb&w=850";
 
 export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
@@ -53,8 +53,8 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
       {heartbreak ?
         <section className="rev-hero rev-hero-breakup">
           <picture className="rev-hero-visual rev-hero-picture">
-            <source media="(max-width: 700px)" srcSet="https://images.pexels.com/photos/29400911/pexels-photo-29400911.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1100" />
-            <img src={heroWoman} alt="Mujer con lentes oscuros y expresión atrevida" width={1200} height={1600} loading="eager" fetchPriority="high" />
+            <source media="(max-width: 700px)" srcSet="/approved/cantalovergas-hero.webp" />
+            <img src={heroWoman} alt="Mujer con lentes oscuros haciendo gesto irreverente y hombre tomando tequila" width={765} height={512} loading="eager" fetchPriority="high" />
           </picture>
           <div className="rev-hero-left">
             <h1>Despecho<br/>también suena<br/><em>bonito</em> <span className="rev-heart">♡</span></h1>
@@ -67,8 +67,8 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
       :
         <section className="rev-hero rev-hero-love">
           <picture className="rev-hero-visual rev-hero-picture">
-            <source media="(max-width: 700px)" srcSet="https://images.pexels.com/photos/8575560/pexels-photo-8575560.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1100" />
-            <img src={heroLove} alt="Pareja feliz: él la besa en la mejilla mientras ella sonríe" width={1500} height={1000} loading="eager" fetchPriority="high" />
+            <source media="(max-width: 700px)" srcSet="/approved/cantalove-hero.webp" />
+            <img src={heroLove} alt="Pareja sonriendo en la playa mientras él la besa en la mejilla" width={765} height={512} loading="eager" fetchPriority="high" />
           </picture>
           <div className="rev-hero-left">
             <h1>La canción<br/>que llevas años<br/>queriendo <em>regalarle</em></h1>
@@ -158,7 +158,7 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
       </section>
     </main>
     <footer className="rev-footer">
-      <Link href={ownHome} className="rev-logo">canta<span>{heartbreak?"lovergas":"love"}</span></Link>
+      <Link href={ownHome} className="rev-logo">canta<span>{heartbreak?"loverga":"love"}</span>{heartbreak ? <svg className="rev-logo-mark rev-logo-tail" viewBox="0 0 42 58" aria-hidden="true"><path d="M3 6 C30 12 35 27 25 39 C19 47 13 43 16 36" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/><path d="M35 33 L41 50 L26 42 Z" fill="currentColor"/></svg> : <svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}</Link>
       <p>© {new Date().getFullYear()} Cantalove. Música personalizada con IA.</p>
       <Link href={otherHome}>{heartbreak?"Volver al amor ♡":"¿En modo despecho? ↗"}</Link>
     </footer>
