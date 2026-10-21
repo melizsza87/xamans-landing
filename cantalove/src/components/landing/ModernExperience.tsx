@@ -25,7 +25,7 @@ const tiers = [
   {name:"Premium",amount:"$449",features:["Dos versiones cuando estén disponibles","Descarga de ambas versiones","Letra en PDF"]},
 ];
 const bg = (url: string): CSSProperties => ({backgroundImage:'url("'+url+'")'});
-const heroLove = "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1500&q=85";
+const heroLove = "https://images.pexels.com/photos/4127557/pexels-photo-4127557.jpeg?auto=compress&cs=tinysrgb&w=1500";
 const heroWoman = "https://images.pexels.com/photos/20351870/pexels-photo-20351870.jpeg?auto=compress&cs=tinysrgb&w=1100";
 const heroTequila = "https://images.pexels.com/photos/7269234/pexels-photo-7269234.jpeg?auto=compress&cs=tinysrgb&w=850";
 
