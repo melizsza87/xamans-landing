@@ -76,3 +76,16 @@
 @media(max-width:940px){.modern-desktop-nav {display:none}.modern-hero {grid-template-columns:1fr 1fr}.modern-hero-copy {padding:48px 25px}.modern-hero h1 {font-size:clamp(40px,6vw,66px)}.modern-card-grid {grid-template-columns:repeat(2,1fr)}.modern-steps-grid {grid-template-columns:repeat(2,1fr)}.modern-gift {grid-template-columns:70px 1fr}.modern-gift .modern-cta {grid-column:2;justify-self:start}}
 @media(max-width:640px){.modern-nav {padding:16px 20px}.modern-logo {font-size:25px}.modern-nav-cta {font-size:11px;padding:11px 13px}.modern-hero {display:flex;flex-direction:column-reverse}.modern-hero-photo {min-height:330px;background-position:center 35%}.modern-hero-copy {padding:35px 23px 46px}.modern-hero h1 {font-size:clamp(47px,13vw,72px);margin:12px 0 18px}.modern-hero-copy>p {font-size:15px}.modern-actions {flex-direction:column;align-items:stretch}.modern-actions .modern-cta {width:100%}.modern-text-link {align-self:center}.modern-trust {gap:10px;font-size:10px}.modern-section {padding:60px 20px}.modern-card-grid {gap:10px}.modern-photo-card {height:215px;border-radius:12px}.modern-card-copy {bottom:15px;left:11px;right:29px}.modern-card-copy strong {font-size:17px}.modern-card-copy small {font-size:10px}.modern-card-arrow {bottom:15px;right:9px;width:22px;height:22px}.modern-steps-grid {gap:12px}.modern-step h3 {font-size:15px}.modern-step p {font-size:12px}.modern-gift {margin:0 14px;padding:25px;display:block}.modern-gift-symbol {font-size:52px}.modern-gift .modern-cta {margin-top:18px;width:100%}.modern-prices {grid-template-columns:1fr}.modern-footer {display:flex;justify-content:center;text-align:center}.modern-section-heading h2 {font-size:36px}.modern-hero-photo .modern-photo-label {font-size:19px}}
 @media(prefers-reduced-motion:reduce){.modern-cta,.modern-nav-cta,.modern-card-img {transition:none}}
+
+/* Keep the creation journey aligned with each brand, not only its landing. */
+.brand-love {background:#fffaf8 !important;color:#542c37;min-height:100vh}
+.brand-love .bg-noise {background:#fff5f2;background-image:radial-gradient(circle at 80% 0%,rgba(242,185,195,.2),transparent 45%)}
+.brand-love :is(.text-text,.font-display) {color:#542c37}
+.brand-love .text-text-muted {color:#806973}
+.brand-love input,.brand-love select,.brand-love textarea {background:#fff !important;color:#542c37 !important;border:1px solid #e6ccd0 !important}
+.brand-love input::placeholder,.brand-love textarea::placeholder {color:#9a7b84 !important}
+.brand-love .bg-surface\/40 {background:#fff !important;border:1px solid #f0dfe0 !important}
+.brand-love :is(button[type=submit],.bg-accent) {color:#fff !important}
+.brand-love .border-white\/10 {border-color:#edd9dc}
+.brand-love .border-white\/15 {border-color:#e5cdd0}
+.brand-breakup {background:#101112;min-height:100vh}

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function CrearPage() {
   const enabled = Boolean(process.env.ANTHROPIC_API_KEY && process.env.APIFRAME_API_KEY && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.FREE_EMAIL_HASH_SECRET);
   return (
-    <div className="flex flex-col flex-1">
+    <div className="brand-breakup flex flex-col flex-1">
       <Nav />
       <main className="flex-1 bg-noise">
         <div className="mx-auto max-w-2xl px-6 pt-32 pb-24">
