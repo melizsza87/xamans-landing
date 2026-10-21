@@ -239,3 +239,20 @@
 .rev-logo-heart{width:.67em;height:.72em;margin-left:.035em;top:.12em;stroke-width:3;}
 .rev-logo-tail{width:.64em;height:.79em;margin-left:-.10em;top:.19em;}
 @media(max-width:390px){.rev-logo-heart{width:.62em}.rev-logo-tail{width:.59em}}
+
+/* Mobile identity lockup: brand and CTA must remain visible at 320px+ */
+.rev-header{min-width:0}
+.rev-header>.rev-logo{min-width:0;flex-shrink:1}
+.rev-header>.rev-top-cta{flex-shrink:0}
+.rev-logo-tail{width:.61em;height:.57em;margin-left:-.05em;top:.13em}
+@media(max-width:700px){
+ .rev-header{height:68px;padding:0 14px;gap:8px}
+ .rev-header>.rev-logo{font-size:clamp(17px,4.5vw,26px);letter-spacing:-.06em}
+ .rev-header>.rev-top-cta{font-size:11px;padding:10px 12px;gap:5px}
+ .rev-header .rev-logo-tail{width:.56em;height:.57em}
+}
+@media(max-width:370px){
+ .rev-header{padding:0 10px;gap:5px}
+ .rev-header>.rev-logo{font-size:16px}
+ .rev-header>.rev-top-cta{font-size:10px;padding:9px 9px}
+}
