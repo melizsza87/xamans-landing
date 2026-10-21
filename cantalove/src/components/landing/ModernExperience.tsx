@@ -6,7 +6,7 @@ const loveTiles: Tile[] = [
   {label:"Amor", description:"Para decir lo que sientes", image:"https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=82",href:"/crear?occasion=Aniversario"},
   {label:"Celebración",description:"Cumpleaños y momentos especiales",image:"https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=82",href:"/crear?occasion=Cumpleaños"},
   {label:"Agradecimiento",description:"Para quien siempre estuvo",image:"https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=800&q=82",href:"/crear?occasion=Día%20de%20las%20Madres"},
-  {label:"Boda / Vals",description:"La canción de su primer baile",image:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=82",href:"/crear?occasion=Boda%2FVals"},
+  {label:"Boda / Vals",description:"Para novios, mamá o papá",image:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=82",href:"/vals"},
 ];
 const heartbreakTiles = [
   {icon:"♡",name:"Ex tóxico",description:"Para cerrar ciclos y soltar de una vez"},

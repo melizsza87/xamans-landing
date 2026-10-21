@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function CrearPage({ searchParams }: PageProps<"/crear">) {
   const query = await searchParams;
-  const selected = typeof query.occasion === "string" && ["Aniversario", "Boda/Vals", "Cumpleaños", "Día de las Madres", "San Valentín", "XV Años", "Navidad", "Otro"].includes(query.occasion)
+  const selected = typeof query.occasion === "string" && ["Aniversario", "Boda/Vals", "Boda/Vals con mamá", "Boda/Vals con papá", "Cumpleaños", "Día de las Madres", "San Valentín", "XV Años", "Navidad", "Otro"].includes(query.occasion)
     ? query.occasion : "Aniversario";
   const enabled = Boolean(process.env.ANTHROPIC_API_KEY && process.env.APIFRAME_API_KEY && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.FREE_EMAIL_HASH_SECRET);
   return (
@@ -21,7 +21,7 @@ export default async function CrearPage({ searchParams }: PageProps<"/crear">) {
             Paso 1 de 2
           </p>
           <h1 className="mt-4 font-display text-3xl sm:text-4xl text-center text-text">
-            Cuéntanos su historia
+            {selected === "Boda/Vals con mamá" ? "Un vals para mamá" : selected === "Boda/Vals con papá" ? "Un vals para papá" : selected === "Boda/Vals" ? "Su vals, su historia" : "Cuéntanos su historia"}
           </h1>
           <p className="mt-3 text-center text-text-muted">
             Entre más detalles nos des, más personal será la canción.
