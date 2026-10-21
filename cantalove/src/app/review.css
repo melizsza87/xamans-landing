@@ -151,3 +151,74 @@
 .rev-love .rev-hero-visual { background-size:auto 100%;background-position:center center; }
 .rev-breakup .rev-hero-visual { background-size:auto 100%;background-position:right center; }
 }
+
+
+/* Hero image correction: high-resolution real photos, contained and legible on phones. */
+.rev-hero-picture {
+  overflow: hidden;
+  display: block;
+  background: transparent;
+}
+.rev-hero-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+.rev-love .rev-hero-picture img { object-position: center 45%; }
+.rev-breakup .rev-hero-picture img { object-position: center 25%; }
+@media (max-width: 700px) {
+  .rev-site .rev-hero {
+    padding: 0;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rev-site .rev-hero-picture {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: clamp(250px, 70vw, 340px);
+    min-height: 250px;
+    flex: 0 0 auto;
+    z-index: 0;
+  }
+  .rev-site .rev-hero:after { display: none; }
+  .rev-site .rev-hero-left {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    padding: 28px 23px 40px;
+    z-index: 1;
+  }
+  .rev-love .rev-hero-left { background: #fffbf9; }
+  .rev-breakup .rev-hero-left { background: #245d88; }
+  .rev-site .rev-hero h1 {
+    font-size: clamp(38px, 10vw, 53px);
+    line-height: 1.06;
+    letter-spacing: -.045em;
+    margin-bottom: 18px;
+    overflow-wrap: normal;
+  }
+  .rev-site .rev-hero-left > p {
+    font-size: 15px;
+    line-height: 1.55;
+    margin-bottom: 24px;
+    max-width: 480px;
+  }
+  .rev-site .rev-hero-left .rev-button {
+    min-height: 50px;
+    padding: 14px 26px;
+  }
+  .rev-site .rev-proof { margin-top: 22px; }
+  .rev-love .rev-hero-picture img { object-position: center 43%; }
+  .rev-breakup .rev-hero-picture img { object-position: center 20%; }
+}
+@media (max-width: 380px) {
+  .rev-site .rev-hero h1 { font-size: 37px; }
+  .rev-header { gap: 8px; }
+  .rev-logo { font-size: 24px; }
+  .rev-top-cta { padding: 10px 12px; }
+}

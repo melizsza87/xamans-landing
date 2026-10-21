@@ -1,5 +1,3 @@
-import { loveApprovedHero } from "@/lib/love-approved";
-import { despechoApprovedHero } from "@/lib/despecho-approved";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
@@ -27,8 +25,8 @@ const tiers = [
   {name:"Premium",amount:"$449",features:["Dos versiones cuando estén disponibles","Descarga de ambas versiones","Letra en PDF"]},
 ];
 const bg = (url: string): CSSProperties => ({backgroundImage:'url("'+url+'")'});
-const heroLove = loveApprovedHero;
-const heroWoman = despechoApprovedHero;
+const heroLove = "https://images.pexels.com/photos/8575560/pexels-photo-8575560.jpeg?auto=compress&cs=tinysrgb&w=1800";
+const heroWoman = "https://images.pexels.com/photos/29400911/pexels-photo-29400911.jpeg?auto=compress&cs=tinysrgb&w=1800";
 const heroTequila = "https://images.pexels.com/photos/7269234/pexels-photo-7269234.jpeg?auto=compress&cs=tinysrgb&w=850";
 
 export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
@@ -52,7 +50,10 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
     <main>
       {heartbreak ?
         <section className="rev-hero rev-hero-breakup">
-          <div className="rev-hero-visual" style={bg(heroWoman)} role="img" aria-label="Retrato editorial de mujer, inspiración de canciones de despecho"/>
+          <picture className="rev-hero-visual rev-hero-picture">
+            <source media="(max-width: 700px)" srcSet="https://images.pexels.com/photos/29400911/pexels-photo-29400911.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1100" />
+            <img src={heroWoman} alt="Mujer con lentes oscuros y expresión atrevida" width={1200} height={1600} loading="eager" fetchPriority="high" />
+          </picture>
           <div className="rev-hero-left">
             <h1>Despecho<br/>también suena<br/><em>bonito</em> <span className="rev-heart">♡</span></h1>
             <p>Convierte la historia que te rompió el corazón en una canción única. Con toda la honestidad, humor y poder que merece tu historia.</p>
@@ -63,7 +64,10 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
         </section>
       :
         <section className="rev-hero rev-hero-love">
-          <div className="rev-hero-visual" style={bg(heroLove)} role="img" aria-label="Pareja romántica compartiendo un momento especial"/>
+          <picture className="rev-hero-visual rev-hero-picture">
+            <source media="(max-width: 700px)" srcSet="https://images.pexels.com/photos/8575560/pexels-photo-8575560.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1100" />
+            <img src={heroLove} alt="Pareja feliz: él la besa en la mejilla mientras ella sonríe" width={1500} height={1000} loading="eager" fetchPriority="high" />
+          </picture>
           <div className="rev-hero-left">
             <h1>La canción<br/>que llevas años<br/>queriendo <em>regalarle</em></h1>
             <p>Cuéntanos su historia y la convertimos en una canción única, creada con IA. Un regalo que emociona hoy y permanece en la memoria.</p>
