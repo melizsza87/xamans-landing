@@ -1,0 +1,78 @@
+/* Modern brands: clear, responsive design, keeping love completely free of black */
+.modern-site { --m-ink:#472630; --m-acc:#d9315b; --m-paper:#fffaf8; --m-soft:#fbeae7; --m-muted:#81666f; --m-card:#fff; background:var(--m-paper); color:var(--m-ink); min-height:100vh; font-family:Arial, Helvetica, sans-serif; }
+.modern-site * { box-sizing:border-box }
+.modern-site a { text-decoration:none }
+.modern-logo {font-family:Georgia,serif; font-weight:700; letter-spacing:-.045em;font-size:31px;color:var(--m-ink)}
+.modern-logo span {color:var(--m-acc)}
+.modern-nav {display:flex;justify-content:space-between;align-items:center;padding:18px clamp(20px,5.5vw,80px);gap:22px; position:relative;z-index:3;background:var(--m-paper);}
+.modern-desktop-nav {display:flex;gap:clamp(15px,2vw,32px);align-items:center}
+.modern-desktop-nav a {font-size:13px;font-weight:600;color:var(--m-ink);opacity:.75}
+.modern-desktop-nav a:hover {color:var(--m-acc);opacity:1}
+.modern-nav-cta,.modern-cta {display:inline-flex;align-items:center;justify-content:center;gap:16px;border-radius:999px;padding:16px 25px;background:var(--m-acc);color:white;font-size:14px;font-weight:700;transition:transform .2s,filter .2s}
+.modern-nav-cta {padding:12px 22px;font-size:12px}
+.modern-cta:hover,.modern-nav-cta:hover {transform:translateY(-2px);filter:brightness(1.05)}
+.modern-hero {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:560px}
+.modern-hero-copy {align-self:center;padding:70px 7vw 65px max(22px,6vw)}
+.modern-eyebrow {font-size:11px;letter-spacing:.25em;font-weight:800;color:var(--m-acc);line-height:1.5}
+.modern-hero h1 {font-family:Georgia,serif;letter-spacing:-.065em;font-size:clamp(54px,6vw,100px);font-weight:600;line-height:1.04;margin:21px 0}
+.modern-hero h1 em,.modern-gift h2 em {font-style:italic;color:var(--m-acc)}
+.modern-hero-copy>p {font-size:clamp(16px,1.3vw,19px);line-height:1.7;color:var(--m-muted);max-width:480px}
+.modern-actions {display:flex;align-items:center;gap:23px;flex-wrap:wrap;margin-top:28px}
+.modern-text-link {color:var(--m-ink);font-size:13px;font-weight:700;border-bottom:1px solid currentColor;padding-bottom:3px}
+.modern-trust {display:flex;gap:16px;flex-wrap:wrap;margin-top:35px;font-size:12px;color:var(--m-muted)}
+.modern-hero-photo {background-size:cover;background-position:center;position:relative;min-height:490px;background-color:#c8a39b}
+.modern-hero-photo:before {content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(50,20,30,.45),transparent 55%)}
+.modern-photo-label {position:absolute;bottom:28px;right:30px;color:#fff;max-width:220px;text-align:right;font-family:Georgia,serif;font-size:24px;font-style:italic;z-index:1}
+.modern-section {padding:85px clamp(22px,5vw,90px);max-width:1600px;margin:0 auto}
+.modern-section-cards {background:var(--m-soft);max-width:none}
+.modern-section-heading {text-align:center;margin:0 auto 36px;max-width:710px}
+.modern-section-heading h2,.modern-gift h2,.modern-end h2 {font-family:Georgia,serif;font-weight:500;letter-spacing:-.045em;font-size:clamp(32px,3.1vw,53px);line-height:1.14;margin:10px 0}
+.modern-section-heading>p:last-child {color:var(--m-muted);font-size:15px;line-height:1.7}
+.modern-card-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.modern-photo-card {height:clamp(220px,22vw,335px);position:relative;border-radius:18px;overflow:hidden;color:#fff;background:#b08881}
+.modern-card-img {position:absolute;inset:0;background-position:center;background-size:cover;transition:transform .4s}
+.modern-photo-card:hover .modern-card-img {transform:scale(1.06)}
+.modern-photo-card:after {content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(0,0,0,.78))}
+.modern-card-copy {position:absolute;bottom:21px;left:20px;right:45px;z-index:1;display:flex;flex-direction:column;gap:5px}
+.modern-card-copy strong {font-family:Georgia,serif;font-size:22px}
+.modern-card-copy small {font-size:12px;color:#fff;line-height:1.3}
+.modern-card-arrow {position:absolute;right:15px;bottom:22px;z-index:1;width:27px;height:27px;border-radius:50%;background:white;color:#282124;display:flex;align-items:center;justify-content:center}
+.modern-photo-note,.modern-price-note {font-size:11px;color:var(--m-muted);text-align:center;margin-top:18px}
+.modern-steps-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:55px}
+.modern-step {padding:12px;border-top:1px solid var(--m-acc)}
+.modern-num {display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--m-soft);color:var(--m-acc);font-weight:800;font-size:13px}
+.modern-step h3 {font-weight:700;font-size:17px;margin:18px 0 7px}
+.modern-step p {font-size:13px;color:var(--m-muted);line-height:1.6}
+.modern-gift {background:var(--m-soft);max-width:1500px;border-radius:25px;padding:54px;display:grid;grid-template-columns:100px minmax(0,1fr) auto;align-items:center;gap:35px}
+.modern-gift-symbol {font-size:90px;color:var(--m-acc);font-family:Georgia,serif}
+.modern-gift h2 {font-size:clamp(32px,3vw,47px)}
+.modern-gift p {max-width:600px;line-height:1.65;color:var(--m-muted);font-size:15px}
+.modern-gift .modern-gift-fine {font-size:12px}
+.modern-prices {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:770px;gap:16px;margin:30px auto 0}
+.modern-price-card {border:1px solid #e8ced0;background:var(--m-card);border-radius:20px;padding:33px;display:flex;flex-direction:column}
+.modern-price-card.modern-highlight {border:2px solid var(--m-acc)}
+.modern-plan-label {font-size:13px;color:var(--m-acc);text-transform:uppercase;letter-spacing:.2em;font-weight:800}
+.modern-amount {display:block;font-family:Georgia,serif;font-size:49px;letter-spacing:-.06em;margin-top:10px}
+.modern-amount small {font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0}
+.modern-price-card>p {font-size:14px;color:var(--m-muted);margin:10px 0}
+.modern-price-card ul {list-style:none;padding:0;margin:14px 0 24px;flex:1}
+.modern-price-card li {padding:5px 0;font-size:13px}
+.modern-price-cta {background:var(--m-acc);color:white;border-radius:100px;padding:13px;text-align:center;font-weight:700;font-size:13px}
+.modern-end {text-align:center;padding:85px 20px;background:var(--m-soft)}
+.modern-end h2 {margin-bottom:25px}
+.modern-footer {padding:28px clamp(20px,5vw,80px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--m-muted)}
+.modern-footer .modern-logo {font-size:24px}
+.modern-footer a:last-child {color:var(--m-acc);font-weight:700}
+.breakup-site {--m-ink:#fff7ee;--m-acc:#e8ff55;--m-paper:#0e1011;--m-soft:#1c1e1d;--m-muted:#c8c4bd;--m-card:#181a19;}
+.breakup-site .modern-logo span {color:#e8ff55}
+.breakup-site .modern-nav-cta,.breakup-site .modern-cta,.breakup-site .modern-price-cta {color:#151818}
+.breakup-site .modern-hero-photo {background-color:#3d2727}
+.breakup-site .modern-hero-photo:before {background:linear-gradient(0deg,rgba(0,0,0,.7),rgba(0,0,0,.04) 60%)}
+.breakup-site .modern-photo-card {background:#4b252c}
+.breakup-site .modern-num {background:#353a24}
+.breakup-site .modern-price-card {border-color:#373838}
+.breakup-site .modern-section-cards {background:#151716}
+.breakup-site .modern-gift {border:1px solid #373838}
+@media(max-width:940px){.modern-desktop-nav {display:none}.modern-hero {grid-template-columns:1fr 1fr}.modern-hero-copy {padding:48px 25px}.modern-hero h1 {font-size:clamp(40px,6vw,66px)}.modern-card-grid {grid-template-columns:repeat(2,1fr)}.modern-steps-grid {grid-template-columns:repeat(2,1fr)}.modern-gift {grid-template-columns:70px 1fr}.modern-gift .modern-cta {grid-column:2;justify-self:start}}
+@media(max-width:640px){.modern-nav {padding:16px 20px}.modern-logo {font-size:25px}.modern-nav-cta {font-size:11px;padding:11px 13px}.modern-hero {display:flex;flex-direction:column-reverse}.modern-hero-photo {min-height:330px;background-position:center 35%}.modern-hero-copy {padding:35px 23px 46px}.modern-hero h1 {font-size:clamp(47px,13vw,72px);margin:12px 0 18px}.modern-hero-copy>p {font-size:15px}.modern-actions {flex-direction:column;align-items:stretch}.modern-actions .modern-cta {width:100%}.modern-text-link {align-self:center}.modern-trust {gap:10px;font-size:10px}.modern-section {padding:60px 20px}.modern-card-grid {gap:10px}.modern-photo-card {height:215px;border-radius:12px}.modern-card-copy {bottom:15px;left:11px;right:29px}.modern-card-copy strong {font-size:17px}.modern-card-copy small {font-size:10px}.modern-card-arrow {bottom:15px;right:9px;width:22px;height:22px}.modern-steps-grid {gap:12px}.modern-step h3 {font-size:15px}.modern-step p {font-size:12px}.modern-gift {margin:0 14px;padding:25px;display:block}.modern-gift-symbol {font-size:52px}.modern-gift .modern-cta {margin-top:18px;width:100%}.modern-prices {grid-template-columns:1fr}.modern-footer {display:flex;justify-content:center;text-align:center}.modern-section-heading h2 {font-size:36px}.modern-hero-photo .modern-photo-label {font-size:19px}}
+@media(prefers-reduced-motion:reduce){.modern-cta,.modern-nav-cta,.modern-card-img {transition:none}}
