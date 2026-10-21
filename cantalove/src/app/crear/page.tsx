@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function CrearPage() {
+  const enabled = Boolean(process.env.ANTHROPIC_API_KEY && process.env.APIFRAME_API_KEY && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.FREE_EMAIL_HASH_SECRET);
   return (
     <div className="flex flex-col flex-1">
       <Nav />
@@ -24,7 +25,8 @@ export default function CrearPage() {
           </p>
 
           <div className="mt-12 rounded-2xl border border-white/10 bg-surface/40 p-6 sm:p-10">
-            <CrearForm />
+            {!enabled && <div className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">La creación de canciones está en preparación. Puedes conocer la experiencia, pero todavía no se generan audios ni se realizan cobros.</div>}
+            <CrearForm enabled={enabled} />
           </div>
         </div>
       </main>

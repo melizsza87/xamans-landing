@@ -38,8 +38,7 @@ export function PreviewClient({
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play();
-      setPlaying(true);
+      void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   }
 

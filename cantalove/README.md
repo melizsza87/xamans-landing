@@ -24,8 +24,7 @@ cliente, y hoy ninguna ruta del frontend las necesita.
 4. El frontend hace polling cada 5s a `GET /api/song-status/[jobId]` hasta
    recibir `status: "ready"`, momento en el que ese mismo endpoint ya guardó
    la URL del preview en Supabase y movió la orden a `preview`.
-5. `/preview/[orderId]` → reproductor real, corta el audio a los 30s y
-   muestra el gate de pago con los 3 tiers.
+5. `/preview/[orderId]` → reproducción completa antes del pago y selección de planes Básico y Premium. La URL directa de origen es accesible desde el navegador; no se promete DRM. Una vez publicado, probar el CDN y la reproducción móvil.
 6. El usuario elige un tier → `POST /api/checkout` crea una preferencia de
    MercadoPago y redirige al checkout hospedado.
 7. `POST /api/mercadopago/webhook` verifica la notificación, marca la orden
@@ -154,3 +153,15 @@ cantalove/
 │                                  # apiframe, mercadopago, resend, pricing
 └── .env.example
 ```
+
+
+## Estado comercial y configuración pendiente
+- Este repositorio contiene el software, no sus credenciales ni servicios aprovisionados.
+- Debes crear un proyecto Supabase **exclusivo para Cantalove** y ejecutar `supabase/schema.sql`; no reutilizar la base de MarketingCliniq.
+- Variables obligatorias para crear canciones: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `APIFRAME_API_KEY`, `FREE_EMAIL_HASH_SECRET` (32+ caracteres aleatorios).
+- Para ventas: `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+- Configurar webhook Mercado Pago y probar pago de sandbox, segunda versión, letra PDF, correo y acceso denegado antes de abrir ventas.
+- El formulario se desactiva automáticamente si la generación no está configurada. Ningún cobro se simula.
+- La política de 1 canción gratuita por email no constituye verificación de identidad y por sí sola no previene abuso por bots. Incorporar desafío antiabuso / verificación de correo y limitación por IP antes de habilitar generación masiva.
+- VIP y stems no disponibles en MVP. El paquete VIP no se muestra.
+- Mantener en preview hasta completar pruebas y autorización de GitHub para Vercel.

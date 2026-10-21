@@ -111,7 +111,7 @@ const inputClass =
   "w-full rounded-xl bg-surface/60 border border-white/15 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:border-accent-soft transition-colors";
 const labelClass = "block text-sm font-medium text-text mb-2";
 
-export function CrearForm({ initialOccasion = "Aniversario" }: { initialOccasion?: string }) {
+export function CrearForm({ initialOccasion = "Aniversario", enabled = true }: { initialOccasion?: string; enabled?: boolean }) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>({ ...INITIAL_STATE, occasion: initialOccasion });
 
@@ -313,9 +313,10 @@ export function CrearForm({ initialOccasion = "Aniversario" }: { initialOccasion
 
       <button
         type="submit"
-        className="w-full rounded-full bg-accent hover:bg-accent-soft transition-colors px-8 py-4 text-base font-semibold text-text"
+        disabled={!enabled}
+        className="w-full rounded-full bg-accent hover:bg-accent-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-8 py-4 text-base font-semibold text-text"
       >
-        Generar mi canción
+        {enabled ? "Generar mi canción" : "Generación no disponible todavía"}
       </button>
     </form>
   );
