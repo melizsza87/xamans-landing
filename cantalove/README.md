@@ -2,7 +2,7 @@
 
 Aplicación independiente de Next.js dentro de `/cantalove`. No se modifica el sitio Xamans de la raíz.
 
-**Estado: NO GO para lanzamiento.** UI y controles implementados; faltan credenciales, pruebas reales y revisión comercial/legal. No hay simulaciones en producción. La generación y el checkout permanecen desactivados por defecto.
+**Estado: NO GO para lanzamiento.** UI corregida según el mockup fotográfico de Drive y controles implementados; faltan credenciales, pruebas reales y revisión comercial/legal. No hay simulaciones en producción. La generación y el checkout permanecen desactivados por defecto.
 
 ## Ejecutar y verificar
 
@@ -51,5 +51,7 @@ Básico $249 y VIP $899 permanecen visibles sin venta. No se anuncian stems, kar
 - Reembolso/contracargo revoca nuevas descargas. No puede retirar un archivo ya descargado ni una URL firmada ya emitida antes de su expiración.
 - Polling reanuda al volver a preview. No hay worker durable independiente del navegador todavía; el proveedor continúa procesando, pero la importación se completa al consultar el pedido.
 - Revisar periódicamente consumo, saldo, costos, límites y retención. No hay borrado programado ni SLA/soporte operativo todavía: definirlos antes de lanzamiento.
+
+Referencia visual vigente: mockup comparativo de Drive confirmado expresamente por la usuaria. Ver `docs/CORRECCION_VISUAL.md`; el prototipo HTML anterior ya no es la referencia visual principal.
 
 Ver [informe de entrega](docs/ENTREGA.md), [matriz](docs/PRUEBAS.md), [decisiones](docs/DECISIONES.md), [despliegue](docs/DESPLIEGUE.md) y consultas de métricas en `ops/funnel.sql`.

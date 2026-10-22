@@ -1,3 +1,5 @@
+> **Resuelto por la usuaria:** el mockup https://drive.google.com/file/d/1L7MUMCp55OYUXW7hZ5T9TZv5FqNb-9qC/view manda sobre el HTML en diseño. Se aplicó la dirección fotográfica rosa/crema y azul/negro/lima. La tabla original de discrepancias se conserva abajo como historial; ya no está pendiente elegir la referencia visual.
+
 # Decisiones y contradicciones pendientes
 
 | Tema | Fuentes | Implementación provisional | Decisión necesaria |

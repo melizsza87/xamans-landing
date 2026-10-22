@@ -7,7 +7,15 @@ export default defineConfig({
   workers: 1,
   reporter: [
     ["list"],
-    ["json", { outputFile: path.resolve(process.env.PW_EVIDENCE_DIR || "tests/evidence", "playwright-results.json") }],
+    [
+      "json",
+      {
+        outputFile: path.resolve(
+          process.env.PW_EVIDENCE_DIR || "tests/evidence",
+          "playwright-results.json",
+        ),
+      },
+    ],
   ],
   use: {
     headless: true,

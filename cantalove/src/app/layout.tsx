@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import { Playfair_Display, DM_Sans, Caveat } from "next/font/google";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -15,6 +15,12 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const caveat = Caveat({
+  variable: "--font-hand",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "cantalove — La canción que llevas años queriendo regalarle",
   description:
@@ -25,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-MX"
-      className={`${playfair.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${playfair.variable} ${dmSans.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-bg text-text">
         {children}

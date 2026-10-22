@@ -1,3 +1,5 @@
+> **Corrección visual posterior:** la usuaria confirmó que manda el mockup de Drive, no el HTML. La implementación actual reproduce esa dirección fotográfica. Ver [CORRECCION_VISUAL.md](CORRECCION_VISUAL.md) y capturas actuales en `tests/evidence/mockup-v2`. La antigua comparación de 0px contra el HTML es evidencia histórica, **no valida el diseño actual**.
+
 # Entrega técnica · Cantalove + Cantalovergas
 
 Fecha de revisión: 21 octubre 2026 (Monterrey). **Recomendación: NO GO para lanzamiento.** Hay implementación revisable y pruebas locales; no se declara producto comercial validado sin servicios reales.

@@ -1,3 +1,5 @@
+> **Diseño actual:** las capturas y pruebas visuales vigentes están en `tests/evidence/mockup-v2`. Las mediciones contra el HTML descritas abajo corresponden a la versión anterior y quedaron superadas por la instrucción explícita de seguir el mockup de Drive.
+
 # Matriz de validación · 21 octubre 2026
 
 Esta matriz distingue implementación de validación con servicios reales. Los tests no contienen credenciales reales. Historias de QA ficticias (José y María).
