@@ -8,7 +8,7 @@ Rama: `codex/cantalove-launch-readiness`, base `main` (`20f5dc90c8d22bf7aaee9138
 
 URL pública de prueba: **bloqueada** por Vercel HTTP403 al consultar el proyecto Cantalove de su equipo propietario. La conexión puede listar el proyecto pero no administrarlo. No se desplegó a producción ni se asignaron dominios. Véase `DESPLIEGUE.md` para recuperación y configuración exclusiva.
 
-Enlace al PR: se registra al crear el PR de esta rama. Este archivo forma parte del mismo PR y de su evidencia revisable.
+Pull request revisable: [#3](https://github.com/melizsza87/xamans-landing/pull/3) (draft, sin fusionar). Este archivo forma parte del mismo PR y de su evidencia revisable.
 
 ## 2. Comparación visual
 
