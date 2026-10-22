@@ -1,6 +1,40 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+
+function winAnsi(text: string): string {
+  // The bundled standard PDF fonts cannot encode emoji and arbitrary Unicode.
+  return text.normalize("NFC").replace(/[^\x20-\x7E\u00A1-\u00FF]/g, "?");
+}
+function wrap(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
+  const words = winAnsi(text).split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const rows: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? line + " " + word : word;
+    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+      line = candidate;
+      continue;
+    }
+    if (line) rows.push(line);
+    if (font.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+      line = word;
+    } else {
+      let part = "";
+      for (const char of word) {
+        if (font.widthOfTextAtSize(part + char, fontSize) > maxWidth && part) {
+          rows.push(part);
+          part = "";
+        }
+        part += char;
+      }
+      line = part;
+    }
+  }
+  if (line) rows.push(line);
+  return rows;
+}
 
 export async function GET(
   _request: Request,
@@ -8,89 +42,52 @@ export async function GET(
 ) {
   const { orderId } = await params;
   const supabase = supabaseAdmin();
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .select("id, status, tier")
-    .eq("id", orderId)
-    .single();
-
-  if (orderError || !order) {
-    return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+  const { data: order } = await supabase.from("orders")
+    .select("status, tier").eq("id", orderId).single();
+  if (!order) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+  if (!["paid", "delivered"].includes(order.status)) {
+    return NextResponse.json({ error: "Pago pendiente" }, { status: 403 });
   }
-
-  if (order.status !== "paid" && order.status !== "delivered") {
-    return NextResponse.json(
-      { error: "El pago de esta orden aún no está confirmado" },
-      { status: 403 }
-    );
-  }
-
-  if (order.tier !== "premium" && order.tier !== "vip") {
-    return NextResponse.json(
-      { error: "El PDF de letra sólo está disponible en los tiers Premium y VIP" },
-      { status: 403 }
-    );
+  if (order.tier !== "premium") {
+    return NextResponse.json({ error: "El PDF de letra requiere Premium" }, { status: 403 });
   }
 
   const [{ data: song }, { data: personalization }] = await Promise.all([
     supabase.from("songs").select("lyrics").eq("order_id", orderId).single(),
-    supabase
-      .from("personalizations")
-      .select("names, occasion")
-      .eq("order_id", orderId)
-      .single(),
+    supabase.from("personalizations").select("names").eq("order_id", orderId).single(),
   ]);
+  if (!song?.lyrics) return NextResponse.json({ error: "Letra no disponible" }, { status: 404 });
 
-  if (!song?.lyrics) {
-    return NextResponse.json({ error: "Letra no disponible" }, { status: 404 });
-  }
-
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4
-  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const bodyFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  const margin = 56;
+  const pdf = await PDFDocument.create();
+  const titleFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const bodyFont = await pdf.embedFont(StandardFonts.Helvetica);
+  const margin = 54;
+  const maxWidth = 595 - margin * 2;
+  let page: PDFPage = pdf.addPage([595, 842]);
   let y = 780;
+  for (const line of wrap("Una canción para " + (personalization?.names || "ti"), titleFont, 19, maxWidth)) {
+    page.drawText(line, { x: margin, y, size: 19, font: titleFont, color: rgb(.75,.13,.19) });
+    y -= 27;
+  }
+  y -= 18;
 
-  const title = personalization
-    ? `Para ${(personalization as { names?: string }).names ?? ""}`
-    : "cantalove";
-  page.drawText(title, {
-    x: margin,
-    y,
-    size: 20,
-    font,
-    color: rgb(0.86, 0.15, 0.15),
-  });
-  y -= 32;
-
-  const lines = (song.lyrics as string).split("\n");
-  for (const line of lines) {
-    if (y < margin) {
-      const newPage = pdfDoc.addPage([595, 842]);
-      y = 780;
-      newPage.drawText(line, { x: margin, y, size: 12, font: bodyFont });
+  for (const paragraph of song.lyrics.split("\n")) {
+    const rows = wrap(paragraph, bodyFont, 12, maxWidth);
+    for (const line of rows) {
+      if (y < margin) {
+        page = pdf.addPage([595, 842]);
+        y = 782;
+      }
+      if (line) page.drawText(line, { x: margin, y, size: 12, font: bodyFont, color: rgb(.15,.15,.18) });
       y -= 18;
-      continue;
     }
-    page.drawText(line.slice(0, 95), {
-      x: margin,
-      y,
-      size: 12,
-      font: bodyFont,
-      color: rgb(0.1, 0.1, 0.1),
-    });
-    y -= 18;
   }
 
-  const pdfBytes = await pdfDoc.save();
-
-  return new NextResponse(Buffer.from(pdfBytes), {
+  return new NextResponse(Buffer.from(await pdf.save()), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="cantalove-letra-${orderId}.pdf"`,
+      "Content-Disposition": 'attachment; filename="cantalove-letra.pdf"',
+      "Cache-Control": "private, no-store",
     },
   });
 }

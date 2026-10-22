@@ -2,106 +2,50 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { submitSunoGeneration } from "@/lib/apiframe";
 
-interface GenerateSongBody {
-  orderId: string;
-  lyrics: string;
-  genre: string;
-  voice: string;
-  duration: string;
-}
-
-function isValidBody(body: unknown): body is GenerateSongBody {
-  if (!body || typeof body !== "object") return false;
-  const b = body as Record<string, unknown>;
-  return (
-    typeof b.orderId === "string" &&
-    b.orderId.trim().length > 0 &&
-    typeof b.lyrics === "string" &&
-    b.lyrics.trim().length > 0 &&
-    typeof b.genre === "string" &&
-    b.genre.trim().length > 0 &&
-    typeof b.voice === "string" &&
-    b.voice.trim().length > 0 &&
-    typeof b.duration === "string" &&
-    b.duration.trim().length > 0
-  );
-}
-
-// Only submits the Suno job and returns the jobId — it does not wait for the
-// track to render. Poll /api/song-status/[jobId] for completion, so this
-// route stays well under any serverless function timeout.
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  if (!process.env.APIFRAME_API_KEY) {
+    return NextResponse.json({ error: "El motor musical aún no está configurado." }, { status: 503 });
+  }
+  let orderId: unknown;
+  try { ({ orderId } = await request.json()); }
+  catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
+  if (typeof orderId !== "string" || !/^[0-9a-f-]{36}$/i.test(orderId)) {
+    return NextResponse.json({ error: "Orden inválida" }, { status: 400 });
   }
 
-  if (!isValidBody(body)) {
-    return NextResponse.json(
-      { error: "Faltan campos requeridos: orderId, lyrics, genre, voice, duration" },
-      { status: 400 }
-    );
-  }
-
-  const { orderId, lyrics, genre, voice, duration } = body;
   const supabase = supabaseAdmin();
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("id", orderId)
-    .single();
-
-  if (orderError || !order) {
-    return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+  const [{ data: order }, { data: song }, { data: personalization }] = await Promise.all([
+    supabase.from("orders").select("id, status").eq("id", orderId).single(),
+    supabase.from("songs").select("id, lyrics, apiframe_job_id, status").eq("order_id", orderId).single(),
+    supabase.from("personalizations").select("names, genre, voice, duration").eq("order_id", orderId).single(),
+  ]);
+  if (!order || !song || !personalization || !song.lyrics) {
+    return NextResponse.json({ error: "Orden incompleta o no encontrada" }, { status: 404 });
   }
-
-  const { data: personalization } = await supabase
-    .from("personalizations")
-    .select("names")
-    .eq("order_id", orderId)
-    .single();
+  if (song.apiframe_job_id) return NextResponse.json({ jobId: song.apiframe_job_id });
+  if (order.status !== "generating" || song.status !== "generating") {
+    return NextResponse.json({ error: "La canción ya no está en proceso de generación" }, { status: 409 });
+  }
 
   try {
     const jobId = await submitSunoGeneration({
-      lyrics,
-      genre,
-      voice,
-      duration,
-      title: personalization
-        ? `Canción para ${(personalization as { names: string }).names}`
-        : "cantalove",
+      lyrics: song.lyrics, genre: personalization.genre, voice: personalization.voice,
+      duration: personalization.duration, title: "Canción para " + personalization.names,
     });
-
-    const { error: songError } = await supabase
-      .from("songs")
-      .update({ apiframe_job_id: jobId, status: "generating" })
-      .eq("order_id", orderId);
-
-    if (songError) {
-      console.error("Error guardando apiframe_job_id:", songError);
-      return NextResponse.json(
-        { error: "No se pudo guardar el trabajo de generación" },
-        { status: 500 }
-      );
-    }
-
+    const { error } = await supabase.from("songs")
+      .update({ apiframe_job_id: jobId }).eq("id", song.id).is("apiframe_job_id", null);
+    if (error) throw error;
     return NextResponse.json({ jobId });
   } catch (err) {
-    console.error("Error enviando el trabajo a Apiframe/Suno:", err);
-    await supabase
-      .from("songs")
-      .update({ status: "failed" })
-      .eq("order_id", orderId);
-    await supabase
-      .from("orders")
-      .update({ status: "failed" })
-      .eq("id", orderId);
-    return NextResponse.json(
-      { error: "No se pudo iniciar la generación de música" },
-      { status: 502 }
-    );
+    console.error("No se pudo iniciar generación musical", err);
+    await supabase.from("songs").update({ status: "failed" }).eq("order_id", orderId);
+    await supabase.from("orders").update({ status: "failed" }).eq("id", orderId);
+    const { data: account } = await supabase.from("orders").select("contact_email").eq("id", orderId).single();
+    if (account?.contact_email && process.env.FREE_EMAIL_HASH_SECRET) {
+      const { createHmac } = await import("node:crypto");
+      const key = createHmac("sha256", process.env.FREE_EMAIL_HASH_SECRET).update(account.contact_email.trim().toLowerCase()).digest("hex");
+      await supabase.from("free_generations").delete().eq("email_hash", key).eq("order_id", orderId);
+    }
+    return NextResponse.json({ error: "No se pudo iniciar la canción. Escríbenos para ayudarte." }, { status: 502 });
   }
 }

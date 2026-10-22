@@ -15,7 +15,7 @@ const STEPS = [
     number: "03",
     title: "Escucha, elige y regala",
     description:
-      "Escucha el preview, elige tu tier y descarga la canción completa lista para compartir.",
+      "Escucha la canción completa gratis. Sólo si te encanta, elige un paquete para descargarla.",
   },
 ];
 

@@ -50,7 +50,7 @@ export interface ApiframeJob {
 }
 
 function buildStylePrompt({ genre, voice, duration }: GenerateSongInput) {
-  return `${genre} romántico en español, voz ${voice}, tempo ${duration}, instrumentación auténtica latina, emocionalmente poderoso, producción profesional, sin intro hablada`;
+  return `${genre} en español, voz ${voice}, duración aproximada ${duration}, instrumentación auténtica latina, producción profesional, sin intro hablada, respetando el tono de la letra`;
 }
 
 // Apiframe's sunoParams.vocal_gender expects "female" | "male" | "duet" —

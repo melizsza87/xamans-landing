@@ -4,14 +4,14 @@ import { useRef, useState } from "react";
 import { TIERS, formatMxn } from "@/lib/pricing";
 import type { Tier } from "@/lib/types";
 
-const PREVIEW_LIMIT_SECONDS = 30;
-const TIER_ORDER: Tier[] = ["basic", "premium", "vip"];
+const TIER_ORDER: Tier[] = ["basic", "premium"];
 
 interface PreviewClientProps {
   orderId: string;
   previewUrl: string;
   lyrics: string;
   names: string;
+  hasAlternate: boolean;
 }
 
 export function PreviewClient({
@@ -19,9 +19,9 @@ export function PreviewClient({
   previewUrl,
   lyrics,
   names,
+  hasAlternate,
 }: PreviewClientProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [gated, setGated] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [selectingTier, setSelectingTier] = useState<Tier | null>(null);
@@ -31,22 +31,16 @@ export function PreviewClient({
     const audio = audioRef.current;
     if (!audio) return;
     setElapsed(audio.currentTime);
-    if (audio.currentTime >= PREVIEW_LIMIT_SECONDS) {
-      audio.pause();
-      setPlaying(false);
-      setGated(true);
-    }
   }
 
   function togglePlay() {
     const audio = audioRef.current;
-    if (!audio || gated) return;
+    if (!audio) return;
     if (playing) {
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play();
-      setPlaying(true);
+      void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   }
 
@@ -73,10 +67,7 @@ export function PreviewClient({
     }
   }
 
-  const progressPct = Math.min(
-    100,
-    (elapsed / PREVIEW_LIMIT_SECONDS) * 100
-  );
+  const progressPct = Math.min(100, (elapsed / (audioRef.current?.duration || 1)) * 100);
 
   return (
     <div className="space-y-16">
@@ -101,7 +92,6 @@ export function PreviewClient({
             <button
               type="button"
               onClick={togglePlay}
-              disabled={gated}
               aria-label={playing ? "Pausar" : "Reproducir"}
               className="shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-accent hover:bg-accent-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
             >
@@ -126,19 +116,12 @@ export function PreviewClient({
               </div>
               <div className="mt-2 flex justify-between text-xs text-text-muted">
                 <span>{Math.floor(elapsed)}s</span>
-                <span>Preview de {PREVIEW_LIMIT_SECONDS}s</span>
+                <span>Escucha completa gratis</span>
               </div>
             </div>
           </div>
 
-          {gated && (
-            <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 px-5 py-4 text-center">
-              <p className="text-sm text-text">
-                Escuchaste el preview completo. Elige un tier abajo para
-                desbloquear la canción completa.
-              </p>
-            </div>
-          )}
+          <p className="mt-5 text-xs text-text-muted">La reproducción es gratuita. Si quieres conservar el MP3, elige un paquete abajo.</p>
         </div>
 
         <details className="mt-8 rounded-2xl border border-white/10 bg-surface/30 p-6 sm:p-8">
@@ -152,8 +135,9 @@ export function PreviewClient({
       </section>
 
       <section>
+        {!hasAlternate && <p className="mb-6 text-center text-sm text-text-muted">Por ahora sólo se generó una versión. El paquete Premium aparecerá cuando haya dos canciones disponibles.</p>}
         <h2 className="font-display text-2xl sm:text-3xl text-center text-text">
-          Elige tu tier
+          ¿Quieres llevarte tu canción?
         </h2>
         {checkoutError && (
           <p className="mt-4 text-center text-sm text-accent-soft">
@@ -161,7 +145,7 @@ export function PreviewClient({
           </p>
         )}
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {TIER_ORDER.map((id) => {
+          {TIER_ORDER.filter(id => id !== "premium" || hasAlternate).map((id) => {
             const tier = TIERS[id];
             const featured = id === "premium";
             const isSelecting = selectingTier === id;

@@ -4,9 +4,12 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 const OCCASIONS = [
+  "Despecho",
   "San Valentín",
   "Día de las Madres",
   "Boda/Vals",
+  "Boda/Vals con mamá",
+  "Boda/Vals con papá",
   "XV Años",
   "Aniversario",
   "Cumpleaños",
@@ -23,6 +26,8 @@ const GENRES = [
   "Banda",
   "Mariachi",
   "Vals clásico",
+  "Corrido tumbado",
+  "Regional mexicano",
 ];
 
 const VOICES = ["Femenina", "Masculina", "Dueto"];
@@ -84,6 +89,7 @@ async function waitForSongReady(
 
 interface FormState {
   occasion: string;
+  email: string;
   names: string;
   story: string;
   genre: string;
@@ -92,7 +98,8 @@ interface FormState {
 }
 
 const INITIAL_STATE: FormState = {
-  occasion: OCCASIONS[0],
+  occasion: "Aniversario",
+  email: "",
   names: "",
   story: "",
   genre: GENRES[0],
@@ -106,9 +113,16 @@ const inputClass =
   "w-full rounded-xl bg-surface/60 border border-white/15 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:border-accent-soft transition-colors";
 const labelClass = "block text-sm font-medium text-text mb-2";
 
-export function CrearForm() {
+export function CrearForm({ initialOccasion = "Aniversario", enabled = true }: { initialOccasion?: string; enabled?: boolean }) {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(INITIAL_STATE);
+  const [form, setForm] = useState<FormState>({
+    ...INITIAL_STATE, occasion: initialOccasion,
+    genre: initialOccasion.startsWith("Boda/Vals") ? "Vals clásico" : INITIAL_STATE.genre,
+  });
+  const withMom = form.occasion === "Boda/Vals con mamá";
+  const withDad = form.occasion === "Boda/Vals con papá";
+  const wedding = form.occasion.startsWith("Boda/Vals");
+
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +150,7 @@ export function CrearForm() {
         throw new Error(body?.error || "No se pudo generar la letra");
       }
 
-      const { lyrics, orderId } = await lyricsRes.json();
+      const { orderId } = await lyricsRes.json();
 
       setLoadingStep(1);
 
@@ -145,10 +159,6 @@ export function CrearForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
-          lyrics,
-          genre: form.genre,
-          voice: form.voice,
-          duration: form.duration,
         }),
       });
 
@@ -191,6 +201,12 @@ export function CrearForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className={labelClass} htmlFor="email">Tu correo para recibir la canción</label>
+        <input id="email" type="email" maxLength={254} autoComplete="email" required className={inputClass}
+          placeholder="tu@correo.com" value={form.email} onChange={(e) => update("email", e.target.value)} />
+        <p className="mt-2 text-xs text-text-muted">Una generación gratuita por correo. Utilizaremos tu dirección para entregarte tu canción.</p>
+      </div>
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="occasion">
@@ -200,7 +216,10 @@ export function CrearForm() {
             id="occasion"
             className={selectClass}
             value={form.occasion}
-            onChange={(e) => update("occasion", e.target.value)}
+            onChange={(e) => {
+              const occasion = e.target.value;
+              setForm(prev => ({ ...prev, occasion, genre: occasion.startsWith("Boda/Vals") ? "Vals clásico" : prev.genre }));
+            }}
           >
             {OCCASIONS.map((o) => (
               <option key={o} value={o} className="bg-surface">
@@ -212,12 +231,13 @@ export function CrearForm() {
 
         <div>
           <label className={labelClass} htmlFor="names">
-            Nombres de las personas
+            {withMom ? "Tu nombre y el de mamá" : withDad ? "Tu nombre y el de papá" : wedding ? "Nombres de quienes bailarán" : "Nombres de las personas"}
           </label>
           <input
             id="names"
             className={inputClass}
-            placeholder="Ej. Ana y Miguel"
+            placeholder={withMom ? "Ej. Mariana y Laura" : withDad ? "Ej. Mariana y Roberto" : "Ej. Ana y Miguel"}
+            maxLength={120}
             value={form.names}
             onChange={(e) => update("names", e.target.value)}
             required
@@ -227,18 +247,32 @@ export function CrearForm() {
 
       <div>
         <label className={labelClass} htmlFor="story">
-          Su historia
+          {withMom ? "Tu historia con mamá" : withDad ? "Tu historia con papá" : wedding ? "La historia de este vals" : "Su historia"}
         </label>
         <textarea
           id="story"
           className={`${inputClass} min-h-[160px] resize-y`}
-          placeholder="Cuéntanos su historia con el mayor detalle posible..."
+          placeholder={withMom
+            ? "¿Qué momentos especiales viviste con mamá? ¿Qué quisieras agradecerle al bailar este vals?"
+            : withDad
+              ? "¿Qué recuerdos compartes con papá? ¿Qué te gustaría decirle durante este baile?"
+              : wedding
+                ? "¿Cómo se conocieron? ¿Qué significa este primer baile para ustedes?"
+                : "Cuéntanos su historia con el mayor detalle posible..."}
+          maxLength={1800}
           value={form.story}
           onChange={(e) => update("story", e.target.value)}
           required
         />
       </div>
 
+      {wedding && (
+        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+          {withMom ? "Un vals para celebrar el amor de mamá, sus recuerdos y lo que significa para ti." :
+            withDad ? "Un vals para agradecer a papá y recordar los momentos que los unen." :
+            "Una canción para el primer baile de la pareja, escrita con su propia historia."}
+        </p>
+      )}
       <div className="grid gap-6 sm:grid-cols-3">
         <div>
           <label className={labelClass} htmlFor="genre">
@@ -303,9 +337,10 @@ export function CrearForm() {
 
       <button
         type="submit"
-        className="w-full rounded-full bg-accent hover:bg-accent-soft transition-colors px-8 py-4 text-base font-semibold text-text"
+        disabled={!enabled}
+        className="w-full rounded-full bg-accent hover:bg-accent-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-8 py-4 text-base font-semibold text-text"
       >
-        Generar mi canción
+        {enabled ? "Generar mi canción" : "Generación no disponible todavía"}
       </button>
     </form>
   );

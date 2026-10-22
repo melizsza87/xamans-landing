@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { TIERS, formatMxn } from "@/lib/pricing";
 
-const ORDER = ["basic", "premium", "vip"] as const;
+const ORDER = ["basic", "premium"] as const;
 
 export function Pricing() {
   return (
@@ -10,8 +10,7 @@ export function Pricing() {
         Elige cómo quieres regalarla
       </h2>
       <p className="mt-3 text-center text-text-muted max-w-xl mx-auto">
-        Primero escuchas tu canción. Eliges el tier al final, sólo si te
-        enamora.
+        Escucha tu canción completa antes de decidir si quieres descargarla. Sin cargos sorpresa.
       </p>
 
       <div className="mt-14 grid gap-6 sm:grid-cols-3">

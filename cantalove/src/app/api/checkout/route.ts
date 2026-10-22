@@ -48,6 +48,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
   }
 
+  // VIP needs stems and manual revisions, not implemented in the MVP.
+  if (tier === "vip") return NextResponse.json({ error: "VIP estará disponible próximamente" }, { status: 400 });
+  if (order.status !== "preview") return NextResponse.json({ error: "La canción todavía no está lista para pago" }, { status: 409 });
+  if (tier === "premium") {
+    const { data: song } = await supabase.from("songs").select("alternate_url").eq("order_id", orderId).single();
+    if (!song?.alternate_url) return NextResponse.json({ error: "Premium requiere dos versiones musicales." }, { status: 409 });
+  }
   const tierInfo = TIERS[tier];
 
   try {
