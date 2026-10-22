@@ -256,3 +256,18 @@
  .rev-header>.rev-logo{font-size:16px}
  .rev-header>.rev-top-cta{font-size:10px;padding:9px 9px}
 }
+
+/* Exact Drive-approved Cantalovergas artwork. No programmatic tail or retyped wordmark. */
+.rev-breakup .rev-logo-approved{display:block;position:relative;overflow:hidden;flex:0 0 auto;width:clamp(180px,19vw,250px);height:64px;border-radius:8px;background:#fff;letter-spacing:normal}
+.rev-breakup .rev-logo-approved img{position:absolute;display:block;max-width:none;width:100%;height:auto;left:0;top:-28%;object-fit:contain}
+.rev-breakup .rev-footer .rev-logo-approved{width:235px}
+@media(max-width:700px){
+ .rev-breakup .rev-header{height:68px;padding:0 12px;gap:8px}
+ .rev-breakup .rev-header>.rev-logo-approved{width:clamp(142px,46vw,215px);height:51px;min-width:0;flex:0 1 auto}
+ .rev-breakup .rev-header>.rev-logo-approved img{top:-28%}
+ .rev-breakup .rev-header>.rev-top-cta{flex-shrink:0;font-size:11px;padding:10px 11px}
+}
+@media(max-width:370px){
+ .rev-breakup .rev-header>.rev-logo-approved{width:145px;height:47px}
+ .rev-breakup .rev-header>.rev-top-cta{font-size:10px;padding:9px}
+}

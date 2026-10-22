@@ -36,10 +36,8 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
   const otherHome = heartbreak ? "/" : "/rgas";
   return <div className={heartbreak ? "rev-site rev-breakup":"rev-site rev-love"}>
     <header className="rev-header">
-      <Link href={ownHome} className="rev-logo" aria-label={heartbreak?"Inicio Cantalovergas":"Inicio Cantalove"}>
-        canta<span>{heartbreak?"lovergas":"love"}</span>{heartbreak
-          ? <svg className="rev-logo-mark rev-logo-tail" viewBox="0 0 68 62" aria-hidden="true"><path d="M2 9 C24 2 43 17 40 35 C38 46 49 50 57 44" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round"/><path d="M50 36 L65 43 L54 57 L55 46 Z" fill="currentColor"/></svg>
-          : <svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      <Link href={ownHome} className={heartbreak ? "rev-logo rev-logo-approved" : "rev-logo"} aria-label={heartbreak?"Inicio Cantalovergas":"Inicio Cantalove"}>
+        {heartbreak ? <img src="/approved/cantalovergas-logo.png" alt="Cantalovergas" width={1067} height={603} /> : <>canta<span>love</span><svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
       </Link>
       <nav className="rev-nav" aria-label="Navegación principal">
         <a href="#momentos">{heartbreak?"Historias":"Ocasiones"}</a>
@@ -158,7 +156,7 @@ export function ModernExperience({mode}:{mode:"love"|"breakup"}) {
       </section>
     </main>
     <footer className="rev-footer">
-      <Link href={ownHome} className="rev-logo">canta<span>{heartbreak?"lovergas":"love"}</span>{heartbreak ? <svg className="rev-logo-mark rev-logo-tail" viewBox="0 0 68 62" aria-hidden="true"><path d="M2 9 C24 2 43 17 40 35 C38 46 49 50 57 44" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round"/><path d="M50 36 L65 43 L54 57 L55 46 Z" fill="currentColor"/></svg> : <svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}</Link>
+      <Link href={ownHome} className={heartbreak ? "rev-logo rev-logo-approved" : "rev-logo"}>{heartbreak ? <img src="/approved/cantalovergas-logo.png" alt="Cantalovergas" width={1067} height={603} /> : <>canta<span>love</span><svg className="rev-logo-mark rev-logo-heart" viewBox="0 0 46 48" aria-hidden="true"><path d="M23 43 C13 32 3 25 4 14 C5 1 18 1 23 13 C30 -1 44 3 42 16 C40 27 29 36 23 43 Z" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>}</Link>
       <p>© {new Date().getFullYear()} Cantalove. Música personalizada con IA.</p>
       <Link href={otherHome}>{heartbreak?"Volver al amor ♡":"¿En modo despecho? ↗"}</Link>
     </footer>
