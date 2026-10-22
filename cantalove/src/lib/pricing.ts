@@ -26,7 +26,7 @@ export const TIERS: Record<Tier, TierInfo> = {
     id: "vip",
     name: "VIP",
     amountCents: 89900,
-    features: ["Revisiones ilimitadas", "Stems", "Versión sin letra"],
+    features: ["Paquete pendiente de definición y validación"],
   },
 };
 

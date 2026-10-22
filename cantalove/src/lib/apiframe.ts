@@ -1,25 +1,26 @@
 import "server-only";
 
-// Apiframe (https://docs.apiframe.ai) proxies the Suno music-generation API.
-// Generation is async: POST /v2/music/generate returns a jobId immediately,
-// and GET /v2/jobs/:id is polled until the job's status is "finished" (or
-// "failed"). Every Suno-specific field (custom_mode, title, style,
-// vocal_gender, model_version, instrumental) must live inside sunoParams —
-// the top level only accepts prompt, model, webhookUrl, and webhookEvents.
-
-const API_BASE = process.env.APIFRAME_API_BASE || "https://api.apiframe.ai";
-
-function apiKey() {
-  const key = process.env.APIFRAME_API_KEY;
-  if (!key) throw new Error("Missing APIFRAME_API_KEY environment variable");
-  return key;
-}
+// Contract checked against docs-v2.apiframe.ai/docs/music/suno and /jobs/get.
+// A submit is intentionally NEVER retried automatically: a timeout can mean
+// the provider accepted it, and a retry could charge for a second generation.
+const API_BASE = "https://api.apiframe.ai";
+const REQUEST_TIMEOUT_MS = 20_000;
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+const JOB_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MODELS = ["V4", "V4_5", "V4_5ALL", "V4_5PLUS", "V5", "V5_5"];
 
 function authHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "X-API-Key": apiKey(),
-  };
+  const key = process.env.APIFRAME_API_KEY;
+  if (!key) throw new Error("Music service is not configured");
+  // Never send the API key to a configurable third-party origin.
+  if (
+    process.env.APIFRAME_API_BASE &&
+    process.env.APIFRAME_API_BASE !== API_BASE
+  ) {
+    throw new Error("Music API origin is not allowed");
+  }
+  return { "Content-Type": "application/json", "X-API-Key": key };
 }
 
 interface GenerateSongInput {
@@ -28,90 +29,161 @@ interface GenerateSongInput {
   voice: string;
   duration: string;
   title: string;
+  brand?: "love" | "heartbreak";
+  instrumental?: boolean;
 }
 
-export type ApiframeJobStatus = "pending" | "processing" | "finished" | "failed";
-
-interface SubmitResponse {
-  jobId: string;
-}
-
+export type ApiframeJobStatus =
+  | "QUEUED"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED";
 export interface ApiframeTrack {
   audioUrl?: string;
 }
-
 export interface ApiframeJob {
-  jobId: string;
+  id: string;
   status: ApiframeJobStatus;
-  error?: string;
-  result?: {
-    tracks?: ApiframeTrack[];
+  creditCost?: number;
+  result?: { tracks?: ApiframeTrack[] } | null;
+}
+
+export function buildSunoPayload(input: GenerateSongInput) {
+  if (!input.lyrics.trim() || input.lyrics.length > 5000) {
+    throw new Error("Lyrics exceed music provider limits");
+  }
+  const model = process.env.APIFRAME_MODEL_VERSION || "V4_5PLUS";
+  if (!MODELS.includes(model))
+    throw new Error("Music model is not configured correctly");
+  const vocalGender =
+    input.voice === "Masculina"
+      ? "m"
+      : input.voice === "Femenina"
+        ? "f"
+        : undefined;
+  const mood =
+    input.brand === "heartbreak"
+      ? "despecho, catarsis y dignidad; contundente y sin amenazas"
+      : "romántico, cálido, íntimo y emotivo";
+  return {
+    prompt: input.lyrics,
+    model: "suno",
+    sunoParams: {
+      custom_mode: true,
+      title: input.title.slice(0, 80),
+      // Duration is an artistic request: Suno has no exact-duration parameter.
+      style:
+        `${input.genre} en español de México; ${mood}; voz ${input.voice}; duración deseada ${input.duration}; instrumentación latina auténtica; sin intro hablada`.slice(
+          0,
+          1000,
+        ),
+      ...(vocalGender ? { vocal_gender: vocalGender } : {}),
+      model_version: model,
+      instrumental: input.instrumental === true,
+    },
   };
 }
 
-function buildStylePrompt({ genre, voice, duration }: GenerateSongInput) {
-  return `${genre} romántico en español, voz ${voice}, tempo ${duration}, instrumentación auténtica latina, emocionalmente poderoso, producción profesional, sin intro hablada`;
-}
-
-// Apiframe's sunoParams.vocal_gender expects "female" | "male" | "duet" —
-// re-check against docs.apiframe.ai if this mapping changes.
-function mapVocalGender(voice: string): string {
-  const normalized = voice.trim().toLowerCase();
-  if (normalized === "masculina") return "male";
-  if (normalized === "dueto") return "duet";
-  return "female";
-}
-
-// Submits a Suno generation job. Returns immediately with a jobId — the
-// actual audio is produced asynchronously and must be polled for via
-// getJobStatus (see /api/song-status/[jobId]).
 export async function submitSunoGeneration(
-  input: GenerateSongInput
+  input: GenerateSongInput,
 ): Promise<string> {
   const res = await fetch(`${API_BASE}/v2/music/generate`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({
-      prompt: input.lyrics,
-      model: "suno",
-      sunoParams: {
-        custom_mode: true,
-        title: input.title,
-        style: buildStylePrompt(input),
-        vocal_gender: mapVocalGender(input.voice),
-        model_version: process.env.APIFRAME_MODEL_VERSION || "v4_5plus",
-        instrumental: false,
-      },
-    }),
+    body: JSON.stringify(buildSunoPayload(input)),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    cache: "no-store",
+    redirect: "error",
   });
-
-  if (!res.ok) {
-    throw new Error(
-      `Apiframe submit failed: ${res.status} ${await res.text()}`
-    );
-  }
-
-  const data = (await res.json()) as SubmitResponse;
-  if (!data.jobId) {
-    throw new Error("Apiframe submit response missing jobId");
+  if (!res.ok) throw new Error(`Music submission failed (${res.status})`);
+  const data = await res.json();
+  if (typeof data.jobId !== "string" || !JOB_ID.test(data.jobId)) {
+    throw new Error("Music submission returned an invalid job");
   }
   return data.jobId;
 }
 
-// Fetches the current status of a previously submitted job. When
-// status === "finished", result.tracks[0].audioUrl / tracks[1].audioUrl
-// hold the two generated versions.
 export async function getJobStatus(jobId: string): Promise<ApiframeJob> {
-  const res = await fetch(`${API_BASE}/v2/jobs/${jobId}`, {
-    method: "GET",
+  if (!JOB_ID.test(jobId)) throw new Error("Invalid music job");
+  const res = await fetch(`${API_BASE}/v2/jobs/${encodeURIComponent(jobId)}`, {
     headers: authHeaders(),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    cache: "no-store",
+    redirect: "error",
   });
-
-  if (!res.ok) {
-    throw new Error(
-      `Apiframe job fetch failed: ${res.status} ${await res.text()}`
-    );
+  if (!res.ok) throw new Error(`Music status unavailable (${res.status})`);
+  const data = await res.json();
+  if (
+    data.id !== jobId ||
+    !["QUEUED", "PROCESSING", "COMPLETED", "FAILED"].includes(data.status)
+  ) {
+    throw new Error("Music service returned an invalid job status");
   }
+  return data as ApiframeJob;
+}
 
-  return (await res.json()) as ApiframeJob;
+export function isAllowedAudioUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    // Exact documented CDN only. Do not allow arbitrary subdomains, credentials,
+    // ports, IP addresses or redirects (including redirect-to-private-network).
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "cdn2.apiframe.ai" &&
+      !url.port &&
+      !url.username &&
+      !url.password &&
+      /^\/audio\/[a-zA-Z0-9_-]+\.mp3$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchPrivateTrack(raw: string): Promise<Uint8Array> {
+  if (!isAllowedAudioUrl(raw))
+    throw new Error("Music asset origin is not allowed");
+  const res = await fetch(raw, {
+    redirect: "error",
+    signal: AbortSignal.timeout(20_000),
+    cache: "no-store",
+  });
+  if (!res.ok || !res.body) throw new Error("Music asset is unavailable");
+  const declaredLength = Number(res.headers.get("content-length") || "0");
+  const type = (res.headers.get("content-type") || "").split(";")[0].trim();
+  if (
+    !["audio/mpeg", "audio/mp3", "application/octet-stream"].includes(type) ||
+    declaredLength > MAX_AUDIO_BYTES
+  ) {
+    await res.body.cancel();
+    throw new Error("Music asset format is invalid");
+  }
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_AUDIO_BYTES)
+        throw new Error("Music asset exceeds size limit");
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
+  if (total < 4) throw new Error("Music asset is empty");
+  const audio = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    audio.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  // MP3s start with ID3 metadata or an MPEG frame sync, never HTML/JSON.
+  const id3 = audio[0] === 0x49 && audio[1] === 0x44 && audio[2] === 0x33;
+  const frame = audio[0] === 0xff && (audio[1] & 0xe0) === 0xe0;
+  if (!id3 && !frame) throw new Error("Music asset is not an MP3");
+  return audio;
 }

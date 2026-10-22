@@ -1,0 +1,12 @@
+✓ Running next.config.ts took 24ms
+
+Running 4 tests using 1 worker
+
+(node:38) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/ui.spec.ts:10:7 › desktop: brands, vinyl, responsive layout, multi-step draft and validation (3.5s)
+  ✓  2 tests/ui.spec.ts:10:7 › mobile: brands, vinyl, responsive layout, multi-step draft and validation (2.0s)
+  ✓  3 tests/ui.spec.ts:116:5 › unauthorized orders and downloads fail closed without database credentials (55ms)
+  ✓  4 tests/ui.spec.ts:137:5 › approved prototype and implementation use the same fonts and hero geometry (2.8s)
+
+  4 passed (9.0s)

@@ -1,116 +1,100 @@
+import { recordEvent } from "@/lib/telemetry";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { generateLyrics } from "@/lib/anthropic";
-
-interface GenerateLyricsBody {
-  occasion: string;
-  names: string;
-  story: string;
-  genre: string;
-  voice: string;
-  duration: string;
-}
-
-function isValidBody(body: unknown): body is GenerateLyricsBody {
-  if (!body || typeof body !== "object") return false;
-  const b = body as Record<string, unknown>;
-  return (
-    typeof b.occasion === "string" &&
-    b.occasion.trim().length > 0 &&
-    typeof b.names === "string" &&
-    b.names.trim().length > 0 &&
-    typeof b.story === "string" &&
-    b.story.trim().length > 0 &&
-    typeof b.genre === "string" &&
-    b.genre.trim().length > 0 &&
-    typeof b.voice === "string" &&
-    b.voice.trim().length > 0 &&
-    typeof b.duration === "string" &&
-    b.duration.trim().length > 0
-  );
-}
-
+import { generateLyricsWithUsage } from "@/lib/anthropic";
+import { validateBrief } from "@/lib/validation";
+import { sessionEmail } from "@/lib/access";
+import { jsonBody, failure, HttpError, requireKeys } from "@/lib/http";
 export async function POST(request: Request) {
-  let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
-  }
-
-  if (!isValidBody(body)) {
-    return NextResponse.json(
-      { error: "Faltan campos requeridos: occasion, names, story, genre, voice, duration" },
-      { status: 400 }
-    );
-  }
-
-  const { occasion, names, story, genre, voice, duration } = body;
-  const supabase = supabaseAdmin();
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({ status: "generating" })
-    .select("id")
-    .single();
-
-  if (orderError || !order) {
-    console.error("Error creando orden:", orderError);
-    return NextResponse.json(
-      { error: "No se pudo crear la orden" },
-      { status: 500 }
-    );
-  }
-
-  const orderId = order.id as string;
-
-  const { error: personalizationError } = await supabase
-    .from("personalizations")
-    .insert({
-      order_id: orderId,
-      occasion,
-      names,
-      story,
-      genre,
-      voice,
-      duration,
+    const brief = validateBrief(await jsonBody(request));
+    if (!brief)
+      throw new HttpError(
+        400,
+        "Revisa los datos de tu historia y acepta los términos.",
+      );
+    const email = await sessionEmail();
+    if (!email || email !== brief.email)
+      throw new HttpError(401, "Verifica tu correo antes de crear la canción.");
+    requireKeys("ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "APIFRAME_API_KEY");
+    if (
+      process.env.GENERATION_ENABLED !== "true" ||
+      process.env.LEGAL_APPROVED !== "true"
+    )
+      throw new HttpError(
+        503,
+        "La creación de canciones estará disponible cuando terminemos de validar el servicio.",
+      );
+    const db = supabaseAdmin();
+    const { data: reservation, error } = await db.rpc("reserve_free_order", {
+      customer_email: email,
+      request_key: brief.requestId,
+      brief: {
+        occasion: brief.occasion,
+        names: brief.names,
+        story: brief.story,
+        genre: brief.genre,
+        voice: brief.voice,
+        duration: brief.duration,
+        brand: brief.brand,
+        vibe: brief.vibe ?? "",
+      },
     });
-
-  if (personalizationError) {
-    console.error("Error guardando personalización:", personalizationError);
-    return NextResponse.json(
-      { error: "No se pudo guardar la personalización" },
-      { status: 500 }
-    );
-  }
-
-  try {
-    const lyrics = await generateLyrics({ occasion, names, story, genre });
-
-    const { error: songError } = await supabase.from("songs").insert({
-      order_id: orderId,
-      lyrics,
-      status: "generating",
-    });
-
-    if (songError) {
-      console.error("Error guardando letra:", songError);
-      return NextResponse.json(
-        { error: "No se pudo guardar la letra generada" },
-        { status: 500 }
+    if (error) throw new Error("Order reservation failed");
+    const result = reservation as {
+      id: string;
+      created: boolean;
+      limited?: boolean;
+    };
+    if (result.limited)
+      throw new HttpError(
+        429,
+        "La capacidad diaria se ha completado. Inténtalo mañana.",
+      );
+    if (!result.created) {
+      const { data: song } = await db
+        .from("songs")
+        .select("lyrics")
+        .eq("order_id", result.id)
+        .maybeSingle();
+      if (song?.lyrics)
+        return NextResponse.json({ orderId: result.id, lyrics: song.lyrics });
+      throw new HttpError(
+        409,
+        "Tu generación gratuita ya está registrada. Recupera tu pedido; no volveremos a generar ni cobrar automáticamente.",
       );
     }
-
-    return NextResponse.json({ lyrics, orderId });
-  } catch (err) {
-    console.error("Error generando letra con Claude:", err);
-    await supabase
-      .from("orders")
-      .update({ status: "failed" })
-      .eq("id", orderId);
-    return NextResponse.json(
-      { error: "No se pudo generar la letra" },
-      { status: 502 }
-    );
+    await recordEvent("form_complete", brief.brand);
+    await recordEvent("generation_start", brief.brand);
+    try {
+      const generated = await generateLyricsWithUsage(brief);
+      const { error: saveError } = await db
+        .from("songs")
+        .update({ lyrics: generated.lyrics })
+        .eq("order_id", result.id);
+      if (saveError) throw new Error("Lyrics persistence failed");
+      await db
+        .from("generation_costs")
+        .insert({
+          order_id: result.id,
+          provider: "anthropic",
+          model: generated.model,
+          input_tokens: generated.inputTokens,
+          output_tokens: generated.outputTokens,
+          credits: 0,
+        });
+      return NextResponse.json({
+        orderId: result.id,
+        lyrics: generated.lyrics,
+      });
+    } catch {
+      await db.from("orders").update({ status: "failed" }).eq("id", result.id);
+      throw new HttpError(
+        502,
+        "No pudimos completar la letra. Tu pedido está guardado; recupéralo para consultar su estado.",
+      );
+    }
+  } catch (e) {
+    return failure(e);
   }
 }
