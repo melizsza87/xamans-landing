@@ -1,156 +1,55 @@
-# cantalove.com
+# Cantalove / Cantalovergas
 
-Plataforma de canciones personalizadas con IA para el mercado mexicano.
-Next.js (App Router) + Vercel + Supabase + MercadoPago + Claude API + Suno
-(vía Apiframe) + Resend.
+Aplicación independiente de Next.js dentro de `/cantalove`. No se modifica el sitio Xamans de la raíz.
 
-## Regla de seguridad no negociable
+**Estado: NO GO para lanzamiento.** UI y controles implementados; faltan credenciales, pruebas reales y revisión comercial/legal. No hay simulaciones en producción. La generación y el checkout permanecen desactivados por defecto.
 
-Ninguna API key sale del servidor. `ANTHROPIC_API_KEY`, `APIFRAME_API_KEY`,
-`MP_ACCESS_TOKEN` y `SUPABASE_SERVICE_ROLE_KEY` sólo existen como variables
-de entorno del servidor. Las API routes en `src/app/api/**` (`lib/*.ts`
-importan `server-only`) son el único punto de contacto con Anthropic,
-Apiframe, MercadoPago y Supabase — el navegador nunca las llama
-directamente. Sólo las variables con prefijo `NEXT_PUBLIC_` llegan al
-cliente, y hoy ninguna ruta del frontend las necesita.
+## Ejecutar y verificar
 
-## Flujo del producto
-
-1. `/` → el usuario llena el formulario de personalización en `/crear`.
-2. `POST /api/generate-lyrics` → llama a Claude, crea la orden en Supabase y
-   devuelve la letra generada.
-3. `POST /api/generate-song` → envía el trabajo a Suno vía Apiframe y
-   devuelve de inmediato un `jobId` (no espera a que el audio esté listo).
-4. El frontend hace polling cada 5s a `GET /api/song-status/[jobId]` hasta
-   recibir `status: "ready"`, momento en el que ese mismo endpoint ya guardó
-   la URL del preview en Supabase y movió la orden a `preview`.
-5. `/preview/[orderId]` → reproductor real, corta el audio a los 30s y
-   muestra el gate de pago con los 3 tiers.
-6. El usuario elige un tier → `POST /api/checkout` crea una preferencia de
-   MercadoPago y redirige al checkout hospedado.
-7. `POST /api/mercadopago/webhook` verifica la notificación, marca la orden
-   como pagada, sube el track completo a Supabase Storage y dispara el
-   email de entrega vía Resend.
-8. `/descarga/[orderId]` sólo muestra la descarga si la orden está pagada en
-   Supabase (`GET /api/download/[orderId]` genera una URL firmada).
-
-Este diseño evita tener cualquier ruta esperando minutos por Suno: ninguna
-API route de este flujo necesita `maxDuration` extendido — cada llamada
-(incluyendo cada poll de `/api/song-status/[jobId]`) responde en menos de
-un par de segundos, así que corre sin cambios en cualquier plan de Vercel.
-
-## Setup paso a paso
-
-### 1. Clonar e instalar
-
-```bash
-cd cantalove
-npm install
-```
-
-### 2. Supabase
-
-1. Crea un proyecto en [supabase.com](https://supabase.com).
-2. En el **SQL Editor**, corre el contenido de `supabase/schema.sql`. Esto
-   crea las tablas `orders`, `personalizations`, `songs` con RLS activado
-   (sin políticas públicas — sólo la service role tiene acceso) y el bucket
-   privado de Storage `tracks` para los tracks completos ya pagados.
-3. Copia `Project URL` y la `service_role` key desde **Project Settings →
-   API** a `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
-
-### 3. Claude (Anthropic)
-
-1. Genera una API key en [console.anthropic.com](https://console.anthropic.com/settings/keys).
-2. Colócala en `ANTHROPIC_API_KEY`.
-
-### 4. Apiframe (Suno)
-
-1. Crea una cuenta en [apiframe.ai](https://apiframe.ai) y genera tu API key.
-2. Colócala en `APIFRAME_API_KEY`. Se envía en el header `X-API-Key` (no
-   `Authorization`).
-3. `src/lib/apiframe.ts` llama a `POST /v2/music/generate` (todos los campos
-   de Suno — `custom_mode`, `title`, `style`, `vocal_gender`,
-   `model_version`, `instrumental` — van dentro de `sunoParams`, nunca en el
-   nivel superior) y a `GET /v2/jobs/:id` para consultar el resultado.
-   Verifica esos nombres de campo contra
-   [docs.apiframe.ai](https://docs.apiframe.ai) antes de ir a producción —
-   Apiframe puede actualizar su contrato.
-4. La generación de música es asíncrona y puede tardar varios minutos:
-   `/api/generate-song` sólo envía el trabajo y devuelve un `jobId`;
-   `/api/song-status/[jobId]` es el que hace el polling contra Apiframe
-   (uno por llamada, sin loop) hasta que el track está listo. Ninguna de las
-   dos rutas necesita duración extendida de función en Vercel.
-
-### 5. MercadoPago
-
-1. En tus [credenciales de integración](https://www.mercadopago.com/developers/panel/app),
-   copia el `Access Token` a `MP_ACCESS_TOKEN` y la `Public Key` a
-   `MP_PUBLIC_KEY` / `NEXT_PUBLIC_MP_PUBLIC_KEY`.
-2. Configura un webhook apuntando a
-   `https://tu-dominio.com/api/mercadopago/webhook`, suscrito al evento
-   `payment`.
-3. Copia la **firma secreta** del webhook a `MP_WEBHOOK_SECRET` — sin esto
-   `/api/mercadopago/webhook` rechaza todas las notificaciones (por diseño).
-4. Los precios están centralizados en `src/lib/pricing.ts` — el cliente
-   nunca envía el monto, sólo el `tier`, así que edítalos ahí si cambian.
-
-### 6. Resend
-
-1. Verifica tu dominio de envío en [resend.com](https://resend.com/domains).
-2. Genera una API key y colócala en `RESEND_API_KEY`.
-3. Ajusta `RESEND_FROM_EMAIL` a un remitente de tu dominio verificado.
-
-### 7. Variables de entorno
-
-```bash
-cp .env.example .env.local
-```
-
-Rellena todos los valores — ver `.env.example` para la lista completa y
-comentada de cada variable, incluyendo `NEXT_PUBLIC_SITE_URL` (usada para
-construir los `back_urls` de MercadoPago, el `notification_url` del webhook
-y los links de los emails de Resend).
-
-### 8. Desarrollo local
-
-```bash
+```sh
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000). Para probar el flujo
-de pago completo en local necesitas exponer tu servidor con un túnel (p. ej.
-`ngrok`) y apuntar `NEXT_PUBLIC_SITE_URL` y el webhook de MercadoPago a esa
-URL pública.
+Para un navegador ya instalado: `PW_CHROMIUM_PATH=/ruta/chromium npm run test:e2e`. El runner levanta servidor y navegador juntos. Las pruebas de webhook usan mocks explícitos; las de esquema ejecutan PostgreSQL local mediante PGlite. No son evidencia de pagos sandbox o generación real.
 
-### 9. Deploy en Vercel
+## Primera canción real con Suno
 
-1. Importa el repo en Vercel, seleccionando `cantalove/` como root
-   directory del proyecto.
-2. Configura todas las variables de `.env.example` en **Project Settings →
-   Environment Variables**.
-3. Actualiza `NEXT_PUBLIC_SITE_URL` con el dominio final y vuelve a
-   configurar el webhook de MercadoPago con esa URL.
+`npm run smoke:suno` requiere únicamente `APIFRAME_API_KEY`. Usa una letra original ficticia, solicita dos versiones a Suno vía Apiframe y guarda el job para retomar sin duplicarlo. No prueba checkout ni correo; no sustituye el recorrido completo del producto. Los audios/estado de prueba quedan fuera de Git. Un submit ambiguo exige reconciliación antes de reintentar.
 
-## Estructura
+## Infraestructura separada
 
-```
-cantalove/
-├── supabase/schema.sql          # Tablas, RLS, bucket de Storage
-├── src/
-│   ├── app/
-│   │   ├── page.tsx             # Landing (/)
-│   │   ├── crear/                # Formulario de personalización
-│   │   ├── preview/[orderId]/    # Player + gate de pago + tiers
-│   │   ├── descarga/[orderId]/   # Descarga tras pago confirmado
-│   │   └── api/
-│   │       ├── generate-lyrics/
-│   │       ├── generate-song/          # sólo envía el job a Apiframe
-│   │       ├── song-status/[jobId]/    # poll de estado + guarda el resultado
-│   │       ├── checkout/
-│   │       ├── mercadopago/webhook/
-│   │       └── download/[orderId]/(lyrics)/
-│   ├── components/               # UI por página (landing, crear, preview, descarga)
-│   └── lib/                      # Clientes server-only: supabase, anthropic,
-│                                  # apiframe, mercadopago, resend, pricing
-└── .env.example
-```
+1. Proyecto Supabase exclusivo para Cantalove. Aplicar `supabase/schema.sql`, después `supabase/hardening.sql`. No usar MarketingCliniq ni otra base de clientes. Antes de aplicar a una base existente: respaldo, revisar duplicados históricos y policies existentes de Storage. Los pedidos anónimos antiguos no se adjudican por suposición.
+2. Configurar variables de `.env.example` en el proyecto de hosting Cantalove, raíz `cantalove`, nunca en Xamans. `AUTH_SECRET`: al menos 32 caracteres aleatorios, generado fuera del código.
+3. Resend: dominio y remitente verificados. Códigos expiran a los 10 minutos; máximo cinco intentos por código. Sesión HttpOnly SameSite=Lax, 7 días, Secure en producción.
+4. Anthropic: elegir `ANTHROPIC_MODEL` disponible en la cuenta. Apiframe: clave, créditos, modelo y derechos comerciales confirmados.
+5. Mercado Pago: vendedor de prueba, comprador de prueba distinto, `MP_SELLER_ID`, token y secreto de webhook. HTTPS y `NEXT_PUBLIC_SITE_URL` del preview. Webhook `/api/mercadopago/webhook`, evento payment. Nunca probar con vendedor de producción. El servidor verifica `/users/me`, firmas y pago real en la API.
+6. Activar `GENERATION_ENABLED`, `CHECKOUT_ENABLED` y `LEGAL_APPROVED` solo en preview cuando proceda. `MP_ENVIRONMENT=sandbox`, `MP_ENABLE_LIVE_PAYMENTS=false` durante toda prueba.
+7. Generar una canción real, escuchar ambas versiones, comprar en sandbox, probar aprobado/pendiente/rechazado, reembolso, duplicados, correo y descarga con dos navegadores distintos. Documentar IDs privados y costos sin publicarlos.
+
+## Producto
+
+`/` y `/rgas` → formulario de tres pasos → código de correo → letra → job musical asíncrono → `/preview/:id` → escucha completa gratuita → Premium $449 MXN → checkout → webhook → `/descarga/:id` + correo. `/recuperar` exige código nuevo y lista solo pedidos del correo verificado.
+
+Una reserva gratuita por correo, única en PostgreSQL. Peticiones simultáneas no crean otra orden/canción. Una vez enviado un job, no se repite un POST automáticamente. Si el proveedor recibe un trabajo pero no devuelve su ID, se requiere reconciliación: no se sacrifica seguridad presupuestal fingiendo una recuperación automática.
+
+Ambos MP3 se copian a bucket privado antes de ofrecer compra; el navegador escucha mediante proxy autorizado. Descargas con sesión propia, pago aprobado y enlaces de 60 segundos. La escucha puede grabarse; no se promete protección absoluta. No hay enlace de compartir pedidos privados.
+
+Básico $249 y VIP $899 permanecen visibles sin venta. No se anuncian stems, karaoke ni revisiones ilimitadas como entregables disponibles. Premium exige dos archivos presentes antes de checkout. Duración y dueto son indicaciones aproximadas del proveedor.
+
+## Recuperación y operación
+
+- Letra interrumpida o submit musical sin confirmación: recuperar pedido y reconciliar en consola del proveedor antes de cambiar estados. No borrar límites para reintentar sin verificar cargos.
+- Checkout guardado: se recupera la preferencia y se vuelve a verificar vendedor, precio, moneda y referencia. Estado `creating`: revisar proveedor y persistir su ID; no crear otra preferencia a ciegas.
+- Correo ambiguo: idempotencia Resend + lease de entrega; tras 23 horas sin confirmación se exige reconciliación para evitar duplicados fuera de la ventana del proveedor.
+- Reembolso/contracargo revoca nuevas descargas. No puede retirar un archivo ya descargado ni una URL firmada ya emitida antes de su expiración.
+- Polling reanuda al volver a preview. No hay worker durable independiente del navegador todavía; el proveedor continúa procesando, pero la importación se completa al consultar el pedido.
+- Revisar periódicamente consumo, saldo, costos, límites y retención. No hay borrado programado ni SLA/soporte operativo todavía: definirlos antes de lanzamiento.
+
+Ver [informe de entrega](docs/ENTREGA.md), [matriz](docs/PRUEBAS.md), [decisiones](docs/DECISIONES.md), [despliegue](docs/DESPLIEGUE.md) y consultas de métricas en `ops/funnel.sql`.

@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local browser verification
+/.next-qa/
+/test-results/
+/playwright-report/
+
+# Provider smoke job ids and real audio remain private
+/.runtime/

@@ -1,16 +1,29 @@
 import Link from "next/link";
-import { Logo } from "./Logo";
 
-export function Nav() {
+export function Nav({ brand = "love" }: { brand?: string }) {
   return (
-    <header className="absolute top-0 inset-x-0 z-10">
-      <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
-        <Logo />
+    <header className="wrap nav">
+      <Link href="/" className="logo" aria-label="Inicio de Cantalove">
+        canta<b>{brand === "heartbreak" ? "lovergas" : "love"}</b>
+        <span aria-hidden="true"> ♡</span>
+      </Link>
+      <nav aria-label="Navegación principal">
+        <Link href="/#como">Cómo funciona</Link>
+        <Link href="/#ocasiones">Ocasiones</Link>
+        <Link href="/#precios">Paquetes</Link>
+      </nav>
+      <div className="nav-right">
         <Link
-          href="/crear"
-          className="rounded-full border border-white/20 hover:border-white/40 transition-colors px-5 py-2 text-sm font-medium text-text"
+          href={brand === "heartbreak" ? "/" : "/rgas"}
+          className="nav-switch"
         >
-          Crear canción
+          {brand === "heartbreak" ? "¿Te enamoraste? ↗" : "¿Corazón roto? ↗"}
+        </Link>
+        <Link
+          className="solid"
+          href={brand === "heartbreak" ? "/crear?brand=heartbreak" : "/crear"}
+        >
+          Crear canción ↗
         </Link>
       </div>
     </header>

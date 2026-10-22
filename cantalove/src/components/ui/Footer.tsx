@@ -1,12 +1,16 @@
-export function Footer() {
+import Link from "next/link";
+export function Footer({ brand = "love" }: { brand?: string }) {
   return (
-    <footer className="border-t border-white/10">
-      <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-text-muted">
-        <p className="font-display text-text">
-          canta<span className="text-accent">love</span>
-        </p>
-        <p>&copy; {new Date().getFullYear()} cantalove. Hecho con IA y mucho cariño.</p>
-      </div>
+    <footer className="wrap footer">
+      <Link className="logo" href="/">
+        canta<b>{brand === "heartbreak" ? "lovergas" : "love"}</b> ♡
+      </Link>
+      <span>© 2026 Cantalove · Hecho para historias reales.</span>
+      <span className="legal-links">
+        <Link href="/privacidad">Privacidad</Link>
+        <Link href="/terminos">Términos</Link>
+        <a href="#inicio">Volver arriba ↑</a>
+      </span>
     </footer>
   );
 }
