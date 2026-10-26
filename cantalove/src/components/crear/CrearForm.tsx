@@ -1,311 +1,505 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-const OCCASIONS = [
-  "San Valentín",
-  "Día de las Madres",
-  "Boda/Vals",
-  "XV Años",
-  "Aniversario",
-  "Cumpleaños",
-  "Navidad",
-  "Otro",
+export type Brand = "love" | "heartbreak";
+import { GENRES, VOICES, DURATIONS } from "@/lib/validation";
+const MOODS = [
+  ["Aniversario", "💌 Una historia de amor"],
+  ["Boda", "🥂 Algo para celebrar"],
+  ["Mamá o papá", "🌷 Dar las gracias"],
+  ["Despecho", "🔥 Cerrar un capítulo"],
+  ["Cumpleaños", "🎂 Un cumpleaños"],
+  ["Otra ocasión", "✦ Algo diferente"],
 ];
-
-const GENRES = [
-  "Bolero",
-  "Balada pop",
-  "Ranchera",
-  "Cumbia",
-  "Norteño",
-  "Banda",
-  "Mariachi",
-  "Vals clásico",
+const EMOTIONS = [
+  "Emoción y ternura",
+  "Alegría y celebración",
+  "Nostalgia bonita",
+  "Humor y picardía",
+  "Despecho y liberación",
 ];
-
-const VOICES = ["Femenina", "Masculina", "Dueto"];
-
-const DURATIONS = ["1:30 min", "2:00 min", "2:30 min"];
-
-const LOADING_MESSAGES = [
-  "Componiendo la letra...",
-  "Produciendo la música...",
-  "Casi lista...",
-];
-
-const SONG_POLL_INTERVAL_MS = 5000;
-const SONG_POLL_TIMEOUT_MS = 6 * 60 * 1000;
-// After this many polls (~20s), switch the loading copy to "Casi lista...".
-const ALMOST_READY_AFTER_TICKS = 4;
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-interface SongStatusResponse {
-  status: "processing" | "ready" | "failed";
-  audioUrl?: string;
-  error?: string;
-}
-
-async function waitForSongReady(
-  jobId: string,
-  onTick: (ticks: number) => void
-): Promise<void> {
-  const deadline = Date.now() + SONG_POLL_TIMEOUT_MS;
-  let ticks = 0;
-
-  while (Date.now() < deadline) {
-    await sleep(SONG_POLL_INTERVAL_MS);
-    ticks += 1;
-    onTick(ticks);
-
-    const res = await fetch(`/api/song-status/${jobId}`);
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      throw new Error(
-        body?.error || "No se pudo consultar el estado de la canción"
-      );
-    }
-
-    const status = (await res.json()) as SongStatusResponse;
-    if (status.status === "ready") return;
-    if (status.status === "failed") {
-      throw new Error("No se pudo generar la música, intenta de nuevo");
-    }
-  }
-
-  throw new Error(
-    "La generación está tardando más de lo esperado, intenta de nuevo en unos minutos"
-  );
-}
-
-interface FormState {
+const STORE = "cantalove-draft-v1";
+interface Draft {
   occasion: string;
   names: string;
   story: string;
   genre: string;
   voice: string;
   duration: string;
+  email: string;
+  vibe: string;
+  requestId: string;
+  orderId?: string;
+  step: number;
+}
+async function api(path: string, body: unknown) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok)
+    throw new Error(
+      result.error ||
+        "No pudimos completar este paso. Tu historia sigue guardada; inténtalo más tarde.",
+    );
+  return result;
 }
 
-const INITIAL_STATE: FormState = {
-  occasion: OCCASIONS[0],
-  names: "",
-  story: "",
-  genre: GENRES[0],
-  voice: VOICES[0],
-  duration: DURATIONS[0],
-};
-
-const selectClass =
-  "w-full rounded-xl bg-surface/60 border border-white/15 px-4 py-3 text-text focus:outline-none focus:border-accent-soft transition-colors appearance-none";
-const inputClass =
-  "w-full rounded-xl bg-surface/60 border border-white/15 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:border-accent-soft transition-colors";
-const labelClass = "block text-sm font-medium text-text mb-2";
-
-export function CrearForm() {
+interface Props {
+  brand?: Brand;
+  initialOccasion?: string;
+  onCancel?: () => void;
+}
+const subscribe = () => () => {};
+export function CrearForm(props: Props) {
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  return mounted ? (
+    <DraftForm key={props.brand || "love"} {...props} />
+  ) : (
+    <p className="help" role="status">
+      Preparando tu historia…
+    </p>
+  );
+}
+function DraftForm({ brand = "love", initialOccasion, onCancel }: Props) {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(INITIAL_STATE);
-  const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (loading) return;
-    setError(null);
-    setLoading(true);
-    setLoadingStep(0);
-
+  const [draft, setDraft] = useState<Draft>(() => {
+    const initial: Draft = {
+      occasion:
+        initialOccasion || (brand === "love" ? "Aniversario" : "Despecho"),
+      names: "",
+      story: "",
+      genre: brand === "love" ? "Balada pop" : "Corrido tumbado",
+      voice: "Femenina",
+      duration: "2:00 min",
+      email: "",
+      vibe: brand === "love" ? EMOTIONS[0] : EMOTIONS[4],
+      requestId: crypto.randomUUID(),
+      step: 0,
+    };
     try {
-      const lyricsRes = await fetch("/api/generate-lyrics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!lyricsRes.ok) {
-        const body = await lyricsRes.json().catch(() => null);
-        throw new Error(body?.error || "No se pudo generar la letra");
+      const saved = sessionStorage.getItem(STORE + ":" + brand);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<Draft>;
+        return {
+          ...initial,
+          ...parsed,
+          requestId: parsed.requestId || initial.requestId,
+          step: Math.max(0, Math.min(2, Number(parsed.step) || 0)),
+        };
       }
-
-      const { lyrics, orderId } = await lyricsRes.json();
-
-      setLoadingStep(1);
-
-      const songRes = await fetch("/api/generate-song", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId,
-          lyrics,
-          genre: form.genre,
-          voice: form.voice,
-          duration: form.duration,
-        }),
-      });
-
-      if (!songRes.ok) {
-        const body = await songRes.json().catch(() => null);
-        throw new Error(body?.error || "No se pudo iniciar la generación de música");
+    } catch {
+      /* restore is optional */
+    }
+    return initial;
+  });
+  const [consent, setConsent] = useState(false);
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const inflight = useRef(false);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORE + ":" + brand, JSON.stringify(draft));
+    } catch {
+      /* Form remains usable when browser storage is unavailable. */
+    }
+  }, [draft, brand]);
+  function update<K extends keyof Draft>(key: K, value: Draft[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setError("");
+  }
+  async function verifyEmail() {
+    if (!draft.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)) {
+      setError("Escribe un correo válido para recibir tu código.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      if (!sent) {
+        await api("/api/auth/request", {
+          email: draft.email.trim().toLowerCase(),
+        });
+        setSent(true);
+        setMessage("Revisa tu correo e ingresa el código de verificación.");
+      } else {
+        await api("/api/auth/verify", {
+          email: draft.email.trim().toLowerCase(),
+          code,
+        });
+        setVerified(true);
+        setMessage("Correo verificado. Ya puedes generar tu canción.");
       }
-
-      const { jobId } = await songRes.json();
-
-      await waitForSongReady(jobId, (ticks) => {
-        if (ticks >= ALMOST_READY_AFTER_TICKS) setLoadingStep(2);
-      });
-
-      router.push(`/preview/${orderId}`);
-    } catch (err) {
+    } catch (e) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Algo salió mal generando tu canción, intenta de nuevo"
+        e instanceof Error ? e.message : "No pudimos verificar el correo.",
       );
-      setLoading(false);
+    } finally {
+      setBusy(false);
     }
   }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="h-12 w-12 rounded-full border-2 border-white/15 border-t-accent animate-spin" />
-        <p className="mt-8 font-display text-2xl text-text">
-          {LOADING_MESSAGES[loadingStep]}
-        </p>
-        <p className="mt-2 text-sm text-text-muted max-w-sm">
-          Esto puede tardar unos minutos — estamos componiendo algo que sólo
-          existirá para ustedes.
-        </p>
-      </div>
-    );
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (inflight.current) return;
+    if (draft.step < 2) {
+      if (
+        draft.step === 1 &&
+        (!draft.names.trim() || draft.story.trim().length < 20)
+      ) {
+        setError(
+          "Cuéntanos para quién es y al menos un recuerdo de 20 caracteres.",
+        );
+        return;
+      }
+      update("step", draft.step + 1);
+      return;
+    }
+    if (!verified || !consent) {
+      setError(
+        "Verifica tu correo y acepta los términos y el aviso de privacidad antes de continuar.",
+      );
+      return;
+    }
+    inflight.current = true;
+    setBusy(true);
+    setError("");
+    let orderId = draft.orderId;
+    try {
+      if (!orderId) {
+        setMessage("Componiendo la letra a partir de tu historia…");
+        const result = await api("/api/generate-lyrics", {
+          ...draft,
+          brand,
+          email: draft.email.trim().toLowerCase(),
+          consent: true,
+        });
+        orderId = result.orderId;
+        if (!orderId)
+          throw new Error(
+            "No pudimos recuperar el pedido. Tu historia sigue guardada.",
+          );
+        setDraft((current) => ({ ...current, orderId }));
+        try {
+          sessionStorage.setItem(
+            STORE + ":" + brand,
+            JSON.stringify({ ...draft, orderId }),
+          );
+        } catch {
+          /* server idempotency preserves the order */
+        }
+      }
+      setMessage(
+        "Iniciando la producción musical. Esto puede tardar unos minutos…",
+      );
+      await api("/api/generate-song", { orderId });
+      router.push(`/preview/${orderId}`);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "No pudimos iniciar la canción.",
+      );
+      setMessage("Puedes volver a intentarlo: recuperaremos el mismo pedido.");
+      setBusy(false);
+      inflight.current = false;
+    }
   }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="occasion">
-            Ocasión
-          </label>
-          <select
-            id="occasion"
-            className={selectClass}
-            value={form.occasion}
-            onChange={(e) => update("occasion", e.target.value)}
-          >
-            {OCCASIONS.map((o) => (
-              <option key={o} value={o} className="bg-surface">
-                {o}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="names">
-            Nombres de las personas
-          </label>
-          <input
-            id="names"
-            className={inputClass}
-            placeholder="Ej. Ana y Miguel"
-            value={form.names}
-            onChange={(e) => update("names", e.target.value)}
-            required
-          />
-        </div>
+    <form onSubmit={submit}>
+      <span className="eyebrow">Diseña tu canción</span>
+      {draft.orderId && (
+        <p className="status-message">
+          Ya tienes una canción en proceso.{" "}
+          <Link href={`/preview/${draft.orderId}`}>Recuperar mi pedido ↗</Link>
+        </p>
+      )}
+      <h2 id="modalTitle">
+        {
+          [
+            "Empecemos por tu historia.",
+            "Los detalles hacen la canción.",
+            "Ahora dale su sonido.",
+          ][draft.step]
+        }
+      </h2>
+      <div className="progress" aria-label={`Paso ${draft.step + 1} de 3`}>
+        {[0, 1, 2].map((i) => (
+          <i key={i} className={i <= draft.step ? "current" : ""} />
+        ))}
       </div>
-
-      <div>
-        <label className={labelClass} htmlFor="story">
-          Su historia
-        </label>
-        <textarea
-          id="story"
-          className={`${inputClass} min-h-[160px] resize-y`}
-          placeholder="Cuéntanos su historia con el mayor detalle posible..."
-          value={form.story}
-          onChange={(e) => update("story", e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="grid gap-6 sm:grid-cols-3">
-        <div>
-          <label className={labelClass} htmlFor="genre">
-            Género musical
-          </label>
-          <select
-            id="genre"
-            className={selectClass}
-            value={form.genre}
-            onChange={(e) => update("genre", e.target.value)}
-          >
-            {GENRES.map((g) => (
-              <option key={g} value={g} className="bg-surface">
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="voice">
-            Voz
-          </label>
-          <select
-            id="voice"
-            className={selectClass}
-            value={form.voice}
-            onChange={(e) => update("voice", e.target.value)}
-          >
-            {VOICES.map((v) => (
-              <option key={v} value={v} className="bg-surface">
-                {v}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="duration">
-            Duración
-          </label>
-          <select
-            id="duration"
-            className={selectClass}
-            value={form.duration}
-            onChange={(e) => update("duration", e.target.value)}
-          >
-            {DURATIONS.map((d) => (
-              <option key={d} value={d} className="bg-surface">
-                {d}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
+      <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
+        {draft.step === 0 && (
+          <div>
+            <label>¿Qué te gustaría contar?</label>
+            <div className="optgrid">
+              {MOODS.map(([value, text]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`opt ${draft.occasion === value ? "active" : ""}`}
+                  aria-pressed={draft.occasion === value}
+                  onClick={() => update("occasion", value)}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+            {!MOODS.some(([value]) => value === draft.occasion) && (
+              <p className="help" style={{ marginTop: 12 }}>
+                Tu ocasión: {draft.occasion}
+              </p>
+            )}
+          </div>
+        )}
+        {draft.step === 1 && (
+          <div>
+            <label htmlFor="names">¿Para quién es?</label>
+            <input
+              id="names"
+              required
+              maxLength={90}
+              value={draft.names}
+              autoComplete="off"
+              placeholder="Ej. Fer, mi mamá, mi mejor amigo"
+              onChange={(e) => update("names", e.target.value)}
+            />
+            <label htmlFor="story">Cuéntanos su historia</label>
+            <textarea
+              id="story"
+              required
+              minLength={20}
+              maxLength={1800}
+              value={draft.story}
+              placeholder="¿Qué pasó? ¿Qué recuerdo no puede faltar? ¿Hay una frase que solo ustedes entienden?"
+              onChange={(e) => update("story", e.target.value)}
+            />
+            <p className="help">
+              Evita datos sensibles. Usaremos esta historia para componer tu
+              canción con nuestros proveedores de inteligencia artificial.
+            </p>
+          </div>
+        )}
+        {draft.step === 2 && (
+          <div>
+            <label htmlFor="genre">¿Cómo quieres que suene?</label>
+            <select
+              id="genre"
+              value={draft.genre}
+              onChange={(e) => update("genre", e.target.value)}
+            >
+              {GENRES.map((g) => (
+                <option key={g}>{g}</option>
+              ))}
+            </select>
+            <label htmlFor="vibe">¿Qué debería sentirse al escucharla?</label>
+            <select
+              id="vibe"
+              value={draft.vibe}
+              onChange={(e) => update("vibe", e.target.value)}
+            >
+              {EMOTIONS.map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+            <div className="field-row">
+              <div>
+                <label htmlFor="voice">Tipo de voz</label>
+                <select
+                  id="voice"
+                  value={draft.voice}
+                  onChange={(e) => update("voice", e.target.value)}
+                >
+                  {VOICES.map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="duration">Duración aproximada</label>
+                <select
+                  id="duration"
+                  value={draft.duration}
+                  onChange={(e) => update("duration", e.target.value)}
+                >
+                  {DURATIONS.map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p className="help">
+              La duración y la interpretación pueden variar. Escucha la canción
+              completa antes de pagar.
+            </p>
+            <label htmlFor="email">Tu correo</label>
+            <input
+              id="email"
+              type="email"
+              required
+              maxLength={254}
+              autoComplete="email"
+              value={draft.email}
+              placeholder="tu@correo.com"
+              onChange={(e) => {
+                update("email", e.target.value);
+                setVerified(false);
+                setSent(false);
+                setCode("");
+                setMessage("");
+              }}
+            />
+            {!verified && (
+              <div className="verification">
+                {sent && (
+                  <>
+                    <label htmlFor="code">Código de verificación</label>
+                    <input
+                      id="code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={code}
+                      onChange={(e) =>
+                        setCode(e.target.value.replace(/\D/g, ""))
+                      }
+                    />
+                  </>
+                )}
+                <button
+                  className="outline"
+                  type="button"
+                  onClick={verifyEmail}
+                  disabled={busy || (sent && code.length !== 6)}
+                >
+                  {sent ? "Verificar código" : "Enviar código a mi correo"}
+                </button>
+                {sent && (
+                  <button
+                    className="nav-switch"
+                    type="button"
+                    onClick={() => {
+                      setSent(false);
+                      setCode("");
+                      setMessage("");
+                    }}
+                  >
+                    Cambiar o reenviar código
+                  </button>
+                )}
+              </div>
+            )}
+            <label className="consent-label">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              <span>
+                He leído el{" "}
+                <Link href="/privacidad" target="_blank">
+                  aviso de privacidad
+                </Link>{" "}
+                y acepto los{" "}
+                <Link href="/terminos" target="_blank">
+                  términos
+                </Link>
+                . Tengo permiso para compartir esta historia y soy mayor de
+                edad.
+              </span>
+            </label>
+            <p className="help">
+              Una generación gratuita por correo verificado. No necesitas
+              tarjeta para escuchar.
+            </p>
+          </div>
+        )}
+      </fieldset>
+      {message && (
+        <p className="status-message" role="status">
+          {message}
+        </p>
+      )}
       {error && (
-        <p className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent-soft">
+        <p className="error-message" role="alert">
           {error}
         </p>
       )}
-
+      <div className="actions">
+        <button
+          className="outline"
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (draft.step > 0) update("step", draft.step - 1);
+            else if (onCancel) onCancel();
+            else router.push(brand === "love" ? "/" : "/rgas");
+          }}
+        >
+          {draft.step === 0 ? "Cancelar" : "← Volver"}
+        </button>
+        <button
+          className="solid"
+          type="submit"
+          disabled={busy || (draft.step === 2 && (!verified || !consent))}
+        >
+          {busy
+            ? "Preparando tu canción…"
+            : [
+                "Continuar ↗",
+                "Elegir sonido ↗",
+                draft.orderId
+                  ? "Recuperar mi canción ↗"
+                  : "Generar mi canción ↗",
+              ][draft.step]}
+        </button>
+      </div>
+      <p className="help" style={{ marginTop: 18 }}>
+        Tu borrador se conserva en esta pestaña. Bórralo al terminar si usas un
+        dispositivo compartido.
+      </p>
       <button
-        type="submit"
-        className="w-full rounded-full bg-accent hover:bg-accent-soft transition-colors px-8 py-4 text-base font-semibold text-text"
+        type="button"
+        className="nav-switch"
+        disabled={busy}
+        onClick={() => {
+          try {
+            sessionStorage.removeItem(STORE + ":" + brand);
+          } catch {}
+          setDraft((current) => ({
+            ...current,
+            names: "",
+            story: "",
+            email: "",
+            orderId: undefined,
+            requestId: crypto.randomUUID(),
+            step: 0,
+          }));
+          setVerified(false);
+          setSent(false);
+          setConsent(false);
+          setMessage("");
+          setError("");
+        }}
       >
-        Generar mi canción
+        Borrar borrador
       </button>
     </form>
   );

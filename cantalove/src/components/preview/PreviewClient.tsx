@@ -1,222 +1,178 @@
 "use client";
-
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { TIERS, formatMxn } from "@/lib/pricing";
-import type { Tier } from "@/lib/types";
-
-const PREVIEW_LIMIT_SECONDS = 30;
-const TIER_ORDER: Tier[] = ["basic", "premium", "vip"];
-
-interface PreviewClientProps {
-  orderId: string;
-  previewUrl: string;
-  lyrics: string;
-  names: string;
-}
-
 export function PreviewClient({
   orderId,
-  previewUrl,
-  lyrics,
   names,
-}: PreviewClientProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [gated, setGated] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [selectingTier, setSelectingTier] = useState<Tier | null>(null);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  function handleTimeUpdate() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    setElapsed(audio.currentTime);
-    if (audio.currentTime >= PREVIEW_LIMIT_SECONDS) {
-      audio.pause();
-      setPlaying(false);
-      setGated(true);
+  lyrics,
+  ready,
+  jobId,
+  failed,
+  paymentStatus,
+  brand,
+}: {
+  brand: string;
+  orderId: string;
+  names: string;
+  lyrics: string;
+  ready: boolean;
+  jobId: string | null;
+  failed: boolean;
+  paymentStatus: string;
+}) {
+  const [state, setState] = useState(
+    ready ? "ready" : failed ? "failed" : "processing",
+  );
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (state !== "processing" || !jobId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const res = await fetch(`/api/song-status/${jobId}`);
+        const value = await res.json();
+        if (cancelled) return;
+        if (res.ok && value.status === "ready") {
+          window.location.reload();
+          return;
+        }
+        if (value.status === "failed") {
+          setState("failed");
+          return;
+        }
+        if (!res.ok)
+          setError(
+            value.error ||
+              "No pudimos consultar el proveedor. Volveremos a intentarlo.",
+          );
+        else setError("");
+      } catch {
+        if (!cancelled)
+          setError("Se interrumpió la conexión. Tu pedido sigue guardado.");
+      }
+      if (!cancelled) timer = setTimeout(poll, 7000);
     }
-  }
-
-  function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio || gated) return;
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play();
-      setPlaying(true);
-    }
-  }
-
-  async function selectTier(tier: Tier) {
-    setCheckoutError(null);
-    setSelectingTier(tier);
+    timer = setTimeout(poll, 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [state, jobId]);
+  async function continueSong() {
+    setBusy(true);
+    setError("");
     try {
-      const res = await fetch("/api/checkout", {
+      const r = await fetch("/api/generate-song", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, tier }),
+        body: JSON.stringify({ orderId }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.error || "No se pudo iniciar el pago");
-      }
-      const { checkoutUrl } = await res.json();
-      window.location.assign(checkoutUrl);
-    } catch (err) {
-      setCheckoutError(
-        err instanceof Error ? err.message : "No se pudo iniciar el pago"
-      );
-      setSelectingTier(null);
+      const v = await r.json();
+      if (!r.ok) throw new Error(v.error);
+      window.location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo continuar.");
+      setBusy(false);
     }
   }
-
-  const progressPct = Math.min(
-    100,
-    (elapsed / PREVIEW_LIMIT_SECONDS) * 100
-  );
-
+  async function checkout() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, tier: "premium" }),
+      });
+      const v = await r.json();
+      if (!r.ok) throw new Error(v.error);
+      window.location.assign(v.checkoutUrl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo iniciar el pago.");
+      setBusy(false);
+    }
+  }
   return (
-    <div className="space-y-16">
-      <section>
-        <p className="text-xs uppercase tracking-[0.25em] text-accent-soft font-semibold text-center">
-          Tu canción está lista
-        </p>
-        <h1 className="mt-3 font-display text-3xl sm:text-4xl text-center text-text">
-          Para {names}
-        </h1>
-
-        <div className="mt-10 rounded-2xl border border-white/10 bg-surface/50 p-6 sm:p-8">
-          <audio
-            ref={audioRef}
-            src={previewUrl}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={() => setPlaying(false)}
-            preload="metadata"
-          />
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={togglePlay}
-              disabled={gated}
-              aria-label={playing ? "Pausar" : "Reproducir"}
-              className="shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-accent hover:bg-accent-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
-            >
-              {playing ? (
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                  <rect x="2" y="1" width="4" height="14" rx="1" />
-                  <rect x="10" y="1" width="4" height="14" rx="1" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M3 1.5v13l11-6.5-11-6.5z" />
-                </svg>
-              )}
-            </button>
-
-            <div className="flex-1">
-              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className="h-full bg-accent transition-[width]"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-text-muted">
-                <span>{Math.floor(elapsed)}s</span>
-                <span>Preview de {PREVIEW_LIMIT_SECONDS}s</span>
-              </div>
-            </div>
-          </div>
-
-          {gated && (
-            <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 px-5 py-4 text-center">
-              <p className="text-sm text-text">
-                Escuchaste el preview completo. Elige un tier abajo para
-                desbloquear la canción completa.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <details className="mt-8 rounded-2xl border border-white/10 bg-surface/30 p-6 sm:p-8">
-          <summary className="cursor-pointer font-display text-xl text-text">
-            Ver letra
-          </summary>
-          <pre className="mt-4 whitespace-pre-wrap font-sans text-sm text-text-muted leading-relaxed">
-            {lyrics}
-          </pre>
-        </details>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl sm:text-3xl text-center text-text">
-          Elige tu tier
-        </h2>
-        {checkoutError && (
-          <p className="mt-4 text-center text-sm text-accent-soft">
-            {checkoutError}
+    <div className="wrap order-page">
+      <span className="eyebrow">Tu historia hecha música</span>
+      <h1>Para {names}</h1>
+      {state === "ready" ? (
+        <>
+          <p>
+            Escucha tus dos versiones completas gratis. Después decide si
+            quieres descargarlas.
           </p>
-        )}
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {TIER_ORDER.map((id) => {
-            const tier = TIERS[id];
-            const featured = id === "premium";
-            const isSelecting = selectingTier === id;
-            return (
-              <div
-                key={id}
-                className={`rounded-2xl border p-8 flex flex-col ${
-                  featured
-                    ? "border-accent bg-surface/70 shadow-[0_0_40px_-12px_rgba(220,38,38,0.5)]"
-                    : "border-white/10 bg-surface/40"
-                }`}
-              >
-                {featured && (
-                  <span className="text-[11px] uppercase tracking-widest text-accent-soft font-semibold mb-3">
-                    Más elegido
-                  </span>
-                )}
-                <h3 className="text-lg font-semibold text-text">
-                  {tier.name}
-                </h3>
-                <p className="mt-2 font-display text-4xl text-text">
-                  {formatMxn(tier.amountCents)}
-                  <span className="text-sm font-sans text-text-muted">
-                    {" "}
-                    MXN
-                  </span>
-                </p>
-                <ul className="mt-6 space-y-2 flex-1">
-                  {tier.features.map((f) => (
-                    <li
-                      key={f}
-                      className="text-sm text-text-muted flex items-center gap-2"
-                    >
-                      <span className="text-accent-soft">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => selectTier(id)}
-                  disabled={selectingTier !== null}
-                  className={`mt-8 inline-flex justify-center items-center rounded-full px-6 py-3 text-sm font-semibold transition-colors disabled:opacity-50 ${
-                    featured
-                      ? "bg-accent hover:bg-accent-soft text-text"
-                      : "border border-white/20 hover:border-white/40 text-text"
-                  }`}
-                >
-                  {isSelecting ? "Redirigiendo..." : "Elegir " + tier.name}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+          {[0, 1].map((version) => (
+            <div className="step" key={version}>
+              <h3>Versión {version + 1}</h3>
+              <audio
+                controls
+                preload="none"
+                controlsList="nodownload"
+                src={`/api/listen/${orderId}?version=${version}`}
+                onPlay={() =>
+                  void fetch("/api/events", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ event: "play", brand, orderId }),
+                  })
+                }
+              />
+            </div>
+          ))}
+          <details>
+            <summary>Leer mi letra</summary>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{lyrics}</pre>
+          </details>
+          <div className="price">
+            <h2>
+              {TIERS.premium.name} · {formatMxn(TIERS.premium.amountCents)} MXN
+            </h2>
+            <p>Dos versiones MP3 y tu letra en PDF.</p>
+            {["paid", "delivered"].includes(paymentStatus) ? (
+              <Link className="solid" href={`/descarga/${orderId}`}>
+                Ir a mis descargas
+              </Link>
+            ) : (
+              <button className="solid" onClick={checkout} disabled={busy}>
+                {busy ? "Abriendo pago seguro…" : "Elegir Premium y pagar"}
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <h2>
+            {state === "failed"
+              ? "No pudimos completar la canción."
+              : "Estamos creando tu canción."}
+          </h2>
+          <p>
+            Tu pedido está guardado. Puedes volver con tu correo sin iniciar
+            otra generación.
+          </p>
+          {!jobId && lyrics && state !== "failed" && (
+            <button className="solid" disabled={busy} onClick={continueSong}>
+              Continuar producción
+            </button>
+          )}
+          <Link href="/recuperar">Recuperar pedido</Link>
+        </>
+      )}
+      {paymentStatus === "pending" && (
+        <p role="status">
+          Tu pago está pendiente de confirmación. No necesitas volver a pagar.
+        </p>
+      )}
+      {paymentStatus === "rejected" && (
+        <p role="status">
+          Mercado Pago rechazó el pago. Recupera tu pedido para revisar el
+          estado.
+        </p>
+      )}
+      {error && <p role="alert">{error}</p>}
     </div>
   );
 }

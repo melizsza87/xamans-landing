@@ -1,0 +1,47 @@
+✔ Spanish PDF wraps long lines and writes all continued pages without truncation (109.634442ms)
+✔ normalizes email and preserves Spanish names and stories (1.732064ms)
+✔ rejects invalid brief: blankName (0.152639ms)
+✔ rejects invalid brief: longName (0.133491ms)
+✔ rejects invalid brief: shortStory (0.105218ms)
+✔ rejects invalid brief: longStory (0.101552ms)
+✔ rejects invalid brief: invalidEmail (0.139721ms)
+✔ rejects invalid brief: missingConsent (0.16657ms)
+✔ rejects invalid brief: invalidGenre (0.096635ms)
+✔ rejects invalid brief: invalidVoice (0.131498ms)
+✔ rejects invalid brief: invalidDuration (0.185238ms)
+✔ rejects invalid brief: invalidBrand (0.188744ms)
+✔ rejects invalid brief: invalidRequest (0.098679ms)
+✔ rejects invalid brief: arrayOccasion (0.062855ms)
+✔ rejects invalid brief: arrayGenre (0.108793ms)
+✔ rejects invalid brief: arrayVoice (0.061312ms)
+✔ rejects invalid brief: arrayDuration (0.097666ms)
+✔ rejects null, scalar, malformed email values (0.154423ms)
+✔ sandbox is default; live requires explicit additional opt-in (0.55176ms)
+✔ HMAC authenticates request id, payment id and fresh timestamp (1.124111ms)
+✔ payment binding rejects underpayment, wrong currency, seller, mode and replay to another order (0.3458ms)
+▶ Postgres schema: atomic quota, OTP replay/attempt limits, RLS and permissions
+  ✔ bucket stays private even when hardened again (8.057436ms)
+  ✔ OTP is single-use, expires and locks after five wrong attempts (11.933774ms)
+  ✔ rate counter rejects hits beyond limit and resets only after expiry (4.102559ms)
+  ✔ same email/new request key returns same free order and song (7.837876ms)
+  ✔ global 50-per-day cap blocks new order without partial rows (1.595098ms)
+  ✔ public roles cannot invoke privileged RPC or read protected tables (4.571744ms)
+✔ Postgres schema: atomic quota, OTP replay/attempt limits, RLS and permissions (1579.411544ms)
+✔ mock webhook: approved delivery, repeated and concurrent notifications (73.443714ms)
+✔ mock webhook: pending never grants download or sends email (16.148852ms)
+✔ mock webhook: in_process never grants download or sends email (12.469169ms)
+✔ mock webhook: rejected never grants download or sends email (10.617565ms)
+✔ mock webhook: invalid signature, body mismatch, price and preference mismatch denied (36.749548ms)
+✔ mock webhook: refund revokes authorization; stale approved handler cannot redeliver (13.509013ms)
+✔ mock webhook: refund before first approval binds payment and prevents resurrection (8.142654ms)
+✔ mock webhook: uncertain email retries retain first attempt and quarantine after 23h (11.765871ms)
+✔ mock provider: checkout recovery validates preference, seller, items, price and sandbox URL (19.755515ms)
+✔ mock checkout: interrupted navigation reuses existing preference; ambiguous creation stays blocked (18.139005ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1966.045165

@@ -1,59 +1,55 @@
+import { recordOrderEvent } from "@/lib/telemetry";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-
-const SIGNED_URL_TTL_SECONDS = 3600;
-
+import { authorizedOrder } from "@/lib/access";
+import { failure, HttpError } from "@/lib/http";
 export async function GET(
-  _request: Request,
-  { params }: RouteContext<"/api/download/[orderId]">
+  request: Request,
+  { params }: RouteContext<"/api/download/[orderId]">,
 ) {
-  const { orderId } = await params;
-  const supabase = supabaseAdmin();
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .select("id, status")
-    .eq("id", orderId)
-    .single();
-
-  if (orderError || !order) {
-    return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-  }
-
-  if (order.status !== "paid" && order.status !== "delivered") {
+  try {
+    const { orderId } = await params;
+    if (!(await authorizedOrder(orderId)))
+      throw new HttpError(404, "Verifica tu correo para acceder al pedido.");
+    const db = supabaseAdmin();
+    const { data: order } = await db
+      .from("orders")
+      .select("status,payment_status")
+      .eq("id", orderId)
+      .single();
+    if (
+      !order ||
+      !["paid", "delivered"].includes(order.status) ||
+      order.payment_status !== "approved"
+    )
+      throw new HttpError(403, "El pago aún no está confirmado.");
+    const version = new URL(request.url).searchParams.get("version") ?? "0";
+    if (!/^[01]$/.test(version)) throw new HttpError(400, "Versión inválida.");
+    const { data: song } = await db
+      .from("songs")
+      .select("track_paths")
+      .eq("order_id", orderId)
+      .single();
+    const path = song?.track_paths[Number(version)];
+    if (!path || path !== `${orderId}/${version}.mp3`)
+      throw new HttpError(404, "El archivo aún no está disponible.");
+    const { data, error } = await db.storage
+      .from("tracks")
+      .createSignedUrl(path, 60, {
+        download: `cantalove-version-${Number(version) + 1}.mp3`,
+      });
+    if (error || !data) throw new Error("Download signing failed");
+    await db
+      .from("orders")
+      .update({ first_download_grant_at: new Date().toISOString() })
+      .eq("id", orderId)
+      .is("first_download_grant_at", null);
+    await recordOrderEvent("download", orderId);
     return NextResponse.json(
-      { error: "El pago de esta orden aún no está confirmado" },
-      { status: 403 }
+      { downloadUrl: data.signedUrl, expiresIn: 60 },
+      { headers: { "Cache-Control": "private, no-store" } },
     );
+  } catch (e) {
+    return failure(e);
   }
-
-  const { data: song, error: songError } = await supabase
-    .from("songs")
-    .select("full_url")
-    .eq("order_id", orderId)
-    .single();
-
-  if (songError || !song?.full_url) {
-    return NextResponse.json(
-      { error: "El archivo aún no está disponible, intenta de nuevo en unos minutos" },
-      { status: 404 }
-    );
-  }
-
-  const { data: signed, error: signError } = await supabase.storage
-    .from("tracks")
-    .createSignedUrl(song.full_url as string, SIGNED_URL_TTL_SECONDS);
-
-  if (signError || !signed) {
-    console.error("Error generando URL firmada:", signError);
-    return NextResponse.json(
-      { error: "No se pudo generar el enlace de descarga" },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({
-    downloadUrl: signed.signedUrl,
-    expiresIn: SIGNED_URL_TTL_SECONDS,
-  });
 }
