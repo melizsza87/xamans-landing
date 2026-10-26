@@ -2,29 +2,27 @@
 
 # Entrega técnica · Cantalove + Cantalovergas
 
-Fecha de revisión: 21 octubre 2026 (Monterrey). **Recomendación: NO GO para lanzamiento.** Hay implementación revisable y pruebas locales; no se declara producto comercial validado sin servicios reales.
+Fecha de revisión actualizada: 26 octubre 2026 (México). **Recomendación: NO GO para lanzamiento.** Hay implementación revisable y pruebas locales; no se declara producto comercial validado sin servicios reales.
 
 ## 1. Entorno de prueba y pull request
 
 Rama: `codex/cantalove-launch-readiness`, base `main` (`20f5dc90c8d22bf7aaee91384dd4ee0b2336c5da`).
 
-URL pública de prueba: **bloqueada** por Vercel HTTP403 al consultar el proyecto Cantalove de su equipo propietario. La conexión puede listar el proyecto pero no administrarlo. No se desplegó a producción ni se asignaron dominios. Véase `DESPLIEGUE.md` para recuperación y configuración exclusiva.
+URL pública: https://cantalove.vercel.app y https://cantalove.vercel.app/rgas. Acceso Vercel autorizado y publicación pública efectuada por instrucción expresa. Dominio cantalove.com agregado/verificado en Vercel; DNS IONOS pendiente. Generación y cobros desactivados, sin credenciales de proveedores.
 
 Pull request revisable: [#3](https://github.com/melizsza87/xamans-landing/pull/3) (draft, sin fusionar). Este archivo forma parte del mismo PR y de su evidencia revisable.
 
 ## 2. Comparación visual
 
-Referencia principal: `cantalove_prototipo.html` recuperado de Library, 28,378 bytes. Mockup aprobado leído e inspeccionado; estilos incompatibles (fotografías rosa/azul/lima frente al HTML cálido/rojo con vinilo). Se reprodujo el HTML según el requerimiento de preservar composición/vinilo; discrepancia pendiente en `DECISIONES.md`.
-
-Capturas: `tests/evidence/desktop-love.png`, `mobile-love.png`, `desktop-heartbreak.png`, `mobile-heartbreak.png`, formularios y referencias `*-prototype-*`. Comparación con fuentes Playfair/DM Sans cargadas localmente. Las diferencias comerciales necesarias (paquetes sin venta, correo, estados y recuperación) se registran, no se presentan como coincidencia píxel a píxel del sitio entero.
+Referencia vigente: mockup fotográfico de Drive confirmado expresamente por la usuaria, con fotografías aprobadas para cada marca. La dirección visual HTML anterior fue reemplazada. Capturas actuales: `tests/evidence/mockup-v2`; ver `CORRECCION_VISUAL.md`. La comparación histórica de 0px contra el HTML no valida el diseño actual.
 
 ## 3. Pruebas
 
-Matriz detallada en `PRUEBAS.md`; resultados de navegador y geometría en `tests/evidence`. Pruebas unitarias/SQL/mocks reproducibles con `npm test`, sin pagos reales. Build, lint y TypeScript aprobados. Resultado final: **38/38 tests unitarios/SQL/mocks y 4/4 tests de navegador**. Las 80 mediciones comparadas del hero con fuentes iguales tienen desviación máxima **0 px**. Esto valida la geometría medida, no todos los píxeles del sitio.
+Matriz detallada en `PRUEBAS.md`; resultados de navegador y geometría en `tests/evidence`. Pruebas unitarias/SQL/mocks reproducibles con `npm test`, sin pagos reales. Build, lint y TypeScript aprobados. Resultado final: **38/38 tests unitarios/SQL/mocks y 4/4 tests de navegador**. Las mediciones anteriores contra HTML son históricas y no se usan para validar el mockup vigente.
 
 ## 4. Implementado
 
-- Dos marcas con diseño, paletas, vinilo, microinteracción, desktop/móvil y formulario modal de tres pasos.
+- Dos marcas con diseño fotográfico aprobado, paletas, elementos musicales, microinteracciones, desktop/móvil y formulario modal de tres pasos.
 - Nombres, historia, ocasión, género, voz, duración aproximada, emoción y correo. Borrador en sesión de pestaña, botón para borrarlo, identificador de solicitud y recuperación de pedido por correo verificado.
 - OTP de 10 minutos, cinco intentos, límites por correo y globales; sesión HttpOnly, Secure en producción. PostgreSQL reserva una generación por correo de forma atómica y limita nuevas generaciones a 50/día globales como techo provisional de presupuesto (operativo, no promesa de disponibilidad).
 - Letras con Anthropic y separación de instrucciones/datos; contrato Apiframe actualizado; submit único y polling recuperable, importación de dos MP3 a almacenamiento privado.
@@ -73,11 +71,11 @@ Configurar en los dashboards, nunca pegarlas en un PR ni compartir claves en tex
 - `NEXT_PUBLIC_SITE_URL`: HTTPS del preview, no localhost para MP.
 - `GENERATION_ENABLED`, `CHECKOUT_ENABLED`, `LEGAL_APPROVED`: permanecen false hasta cumplir el hito correspondiente.
 
-Bloqueos externos: autorización de equipo Vercel; infraestructura/credenciales anteriores; confirmación comercial de paquetes; responsable legal, contacto/ARCO/soporte, impuestos/reembolso/retención y licencia comercial verificados. No se ocultan como tareas terminadas.
+Bloqueos externos actuales: infraestructura/credenciales anteriores; confirmación comercial de paquetes; responsable legal, contacto/ARCO/soporte, impuestos/reembolso/retención y licencia comercial verificados. No se ocultan como tareas terminadas.
 
 ## 8. Dominio
 
-Instrucciones completas en `DESPLIEGUE.md`. Conectar `cantalove.com` requiere primero preview validado y autorización expresa de producción. Los valores DNS se copian del panel de Vercel de ese proyecto en el momento de conectarlo; no se adivinan registros.
+Instrucciones completas en `DESPLIEGUE.md`. La propietaria ya autorizó publicación y dominio; falta el cambio de DNS en IONOS y validar HTTPS. Los valores DNS se copian del panel de Vercel de ese proyecto en el momento de conectarlo; no se adivinan registros.
 
 ## 9. Pendientes operativos bajo revisión
 
@@ -85,7 +83,7 @@ Instrucciones completas en `DESPLIEGUE.md`. Conectar `cantalove.com` requiere pr
 - La importación/polling se completa cuando el cliente consulta el pedido; no hay worker autónomo sin navegador. El procesamiento del proveedor sí es asíncrono.
 - Un enlace de descarga ya emitido vive hasta60s y el audio escuchado puede grabarse.
 - Faltan limpieza programada/retención definitiva y un canal de soporte real. Avisos aún en borrador.
-- Auditoría de dependencias por red no completada; verificar en CI/entorno conectado antes del GO.
+- Auditoría de dependencias ejecutada el 26 octubre; ver `AVANCE_2026-10-26.md` y evidencia del nuevo lockfile. No constituye auditoría externa de la aplicación.
 
 ## 10. GO / NO GO
 

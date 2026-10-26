@@ -2,7 +2,7 @@ import { recordOrderEvent } from "@/lib/telemetry";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { fetchPrivateTrack, getJobStatus } from "@/lib/apiframe";
-import { authorizedOrder } from "@/lib/access";
+import { authorizedOrder, sessionEmail } from "@/lib/access";
 
 export const maxDuration = 60;
 
@@ -24,6 +24,10 @@ export async function GET(
     return reply({ error: "Trabajo no encontrado" }, 404);
   }
   try {
+    // Reject anonymous polling before looking up a job or contacting a provider.
+    if (!(await sessionEmail())) {
+      return reply({ error: "Verifica tu correo para consultar tu canción." }, 401);
+    }
     const db = supabaseAdmin();
     const { data: song, error: readError } = await db
       .from("songs")

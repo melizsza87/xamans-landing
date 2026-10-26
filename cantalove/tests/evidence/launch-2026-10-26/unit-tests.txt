@@ -1,0 +1,52 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> cantalove@0.1.0 test
+> node --conditions=react-server --import tsx --test tests/*.test.ts
+
+✔ Spanish PDF wraps long lines and writes all continued pages without truncation (152.921363ms)
+✔ normalizes email and preserves Spanish names and stories (1.757013ms)
+✔ rejects invalid brief: blankName (0.192746ms)
+✔ rejects invalid brief: longName (0.126307ms)
+✔ rejects invalid brief: shortStory (0.107059ms)
+✔ rejects invalid brief: longStory (0.150463ms)
+✔ rejects invalid brief: invalidEmail (0.191484ms)
+✔ rejects invalid brief: missingConsent (0.24944ms)
+✔ rejects invalid brief: invalidGenre (0.116403ms)
+✔ rejects invalid brief: invalidVoice (0.154109ms)
+✔ rejects invalid brief: invalidDuration (0.273355ms)
+✔ rejects invalid brief: invalidBrand (0.175861ms)
+✔ rejects invalid brief: invalidRequest (0.103453ms)
+✔ rejects invalid brief: arrayOccasion (0.073539ms)
+✔ rejects invalid brief: arrayGenre (0.09492ms)
+✔ rejects invalid brief: arrayVoice (0.061831ms)
+✔ rejects invalid brief: arrayDuration (0.111395ms)
+✔ rejects null, scalar, malformed email values (0.205785ms)
+✔ sandbox is default; live requires explicit additional opt-in (0.578077ms)
+✔ HMAC authenticates request id, payment id and fresh timestamp (1.253087ms)
+✔ payment binding rejects underpayment, wrong currency, seller, mode and replay to another order (0.359453ms)
+▶ Postgres schema: atomic quota, OTP replay/attempt limits, RLS and permissions
+  ✔ bucket stays private even when hardened again (17.097032ms)
+  ✔ OTP is single-use, expires and locks after five wrong attempts (12.38862ms)
+  ✔ rate counter rejects hits beyond limit and resets only after expiry (4.788154ms)
+  ✔ same email/new request key returns same free order and song (13.380346ms)
+  ✔ global 50-per-day cap blocks new order without partial rows (3.43503ms)
+  ✔ public roles cannot invoke privileged RPC or read protected tables (10.485986ms)
+✔ Postgres schema: atomic quota, OTP replay/attempt limits, RLS and permissions (2095.999663ms)
+✔ mock webhook: approved delivery, repeated and concurrent notifications (97.345268ms)
+✔ mock webhook: pending never grants download or sends email (17.508677ms)
+✔ mock webhook: in_process never grants download or sends email (14.431107ms)
+✔ mock webhook: rejected never grants download or sends email (14.315246ms)
+✔ mock webhook: invalid signature, body mismatch, price and preference mismatch denied (55.436553ms)
+✔ mock webhook: refund revokes authorization; stale approved handler cannot redeliver (9.919317ms)
+✔ mock webhook: refund before first approval binds payment and prevents resurrection (10.551354ms)
+✔ mock webhook: uncertain email retries retain first attempt and quarantine after 23h (8.071459ms)
+✔ mock provider: checkout recovery validates preference, seller, items, price and sandbox URL (36.996392ms)
+✔ mock checkout: interrupted navigation reuses existing preference; ambiguous creation stays blocked (25.05655ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2573.601903

@@ -1,16 +1,44 @@
-# Preview independiente y conexión de cantalove.com
+# Despliegue independiente · 26 octubre 2026
 
-No se ha autorizado producción. No se modificaron DNS, dominio, proyecto ni variables de Xamans.
+## Estado comprobado
 
-Proyecto encontrado: Cantalove (`prj_XG4qXUtrINcX4p2rtUuvvX56fZis`), equipo `team_OGKRO0ueAPoA1XgiWNHTK4GB`. La conexión devolvió HTTP403 al consultar configuración: requiere autorización de acceso al equipo. La herramienta indicada en el error para autorizar equipo no está disponible en esta sesión. No se intenta evadir esa restricción usando otro contexto.
+- Publicación y acceso público autorizados expresamente por la propietaria.
+- URL: https://cantalove.vercel.app; Cantalovergas: https://cantalove.vercel.app/rgas.
+- Proyecto exclusivo `cantalove`, ID `prj_XG4qXUtrINcX4p2rtUuvvX56fZis`, equipo `team_OGKRO0ueAPoA1XgiWNHTK4GB`.
+- El bloqueo HTTP403 de Vercel fue resuelto. No pedir otra autorización de equipo salvo que la API vuelva a requerirla.
+- Despliegue desde un SHA revisado de `codex/cantalove-launch-readiness`, raíz de aplicación `cantalove`; no desde la raíz Xamans. El PR #3 sigue sin fusionarse.
+- La página pública no exige iniciar sesión en Vercel. Los pedidos, audios y descargas conservan autorización propia por correo verificado.
+- `GENERATION_ENABLED=false`, `CHECKOUT_ENABLED=false`, `LEGAL_APPROVED=false`, `MP_ENVIRONMENT=sandbox`, `MP_ENABLE_LIVE_PAYMENTS=false` configurados explícitamente en Vercel para production y preview.
+- `NEXT_PUBLIC_SITE_URL=https://cantalove.vercel.app` hasta que el dominio final tenga HTTPS operativo.
+- Las credenciales de servicios siguen pendientes. Página pública disponible no equivale a apertura comercial.
 
-1. Autorizar acceso de la conexión Vercel al equipo propietario de Cantalove. Confirmar `rootDirectory=cantalove` y repo `melizsza87/xamans-landing`. No editar el proyecto Xamans.
-2. Usar rama `codex/cantalove-launch-readiness` para preview únicamente. Mantener producción y dominio actual sin cambios. Comprobar que una rama no principal no se promueva automáticamente.
-3. Configurar entorno exclusivo siguiendo `.env.example`; preview no tiene credenciales de producción. Proveer base Supabase exclusiva; el único proyecto accesible durante la revisión se llama MarketingCliniq y no se utiliza.
-4. Ejecutar build, pruebas y deploy target preview. Configurar HTTPS preview como `NEXT_PUBLIC_SITE_URL` y webhook sandbox. No asignar cantalove.com todavía.
-5. Completar matriz con proveedor real, SMTP/Resend real y pagos sandbox. Obtener resolución comercial, legal y GO explícito.
-6. Solo tras autorización expresa de producción: agregar `cantalove.com` y `www.cantalove.com` al proyecto Cantalove. Copiar EXACTAMENTE los registros que Vercel muestre para esa cuenta/dominio; no asumir A/CNAME de memoria. Configurarlos en el registrador y comprobar propiedad y TLS. Elegir dominio canónico y redirección www/apex.
-7. Actualizar `NEXT_PUBLIC_SITE_URL=https://cantalove.com`, remitente/DNS Resend SPF/DKIM, webhook live y vendedor live. Activar live requiere deliberadamente `MP_ENVIRONMENT=live` y `MP_ENABLE_LIVE_PAYMENTS=true`; no basta cambiar un token. Revisar impuestos y facturación con responsables.
-8. Ensayo postrelease autorizado, monitoreo y rollback a último despliegue Cantalove. Nunca tocar Xamans para corregir Cantalove.
+## IONOS: conexión pendiente, sin transferencia del dominio
 
-No hay una URL pública de prueba verificable mientras persista el HTTP403. `http://localhost:3000` solo sirve en una máquina con el proyecto ejecutándose; no es una URL entregable al cliente.
+`cantalove.com` pertenece a la usuaria y sigue en IONOS. Vercel ya tiene el dominio agregado y verificado, pero DNS sigue apuntando a `74.208.236.166`, por lo que todavía no sirve este despliegue.
+
+Lectura de la API de Vercel el 26 octubre 2026: conjunto IPv4 recomendado de rango 1: `216.198.79.1` y `64.29.17.1`. Para el dominio raíz, sustituir el A que apunta al alojamiento anterior por los registros A recomendados del proyecto. Comprobar los valores de nuevo en Vercel inmediatamente antes de guardar; no mezclar la IP anterior con las nuevas.
+
+No cambiar servidores de nombres ni borrar registros MX, SPF, DKIM, DMARC o de otros servicios. Revisar también AAAA y redirecciones existentes antes de migrar para evitar tráfico dividido. La usuaria debe abrir DNS de cantalove.com en IONOS; no hay conexión IONOS disponible para efectuar el cambio desde este entorno.
+
+`www.cantalove.com` ya fue agregado al proyecto, verificado y configurado como redirección 308 a cantalove.com. Vercel recomienda CNAME `23ca5c5a41cb3a96.vercel-dns-017.com.` en la lectura actual; obtener configuración exacta de www antes de aplicarla.
+
+Después de propagar: validar apex/www, certificado TLS, redirección canónica y actualizar NEXT_PUBLIC_SITE_URL. Volver a desplegar y actualizar las URL de correo y webhook en el entorno correspondiente.
+
+## Activación de integraciones
+
+1. Crear o conectar Supabase exclusivo de Cantalove y aplicar `supabase/schema.sql` y `supabase/hardening.sql` tras revisar datos existentes. No usar MarketingCliniq.
+2. Configurar secretos de `.env.example` en Vercel, nunca en GitHub ni el chat. `npm run check:config` revisa presencia sin imprimir valores; no certifica funcionamiento.
+3. Verificar dominio y remitente Resend en DNS IONOS. Comprobar recepción real de OTP y correo de entrega con un destinatario de prueba autorizado.
+4. Seleccionar modelo Anthropic accesible y cargar créditos/licencia Apiframe. `npm run smoke:suno` crea una prueba real independiente y guarda su estado privado para no duplicarla.
+5. Pruebas de integración solo en preview protegido y datos ficticios. Para pruebas completas, aprobación legal/comercial correspondiente y flags explícitos. El sitio público permanece cerrado para generación/cobros mientras se prueba.
+6. Mercado Pago México: comprador/vendedor de prueba diferentes; verificar vendedor y webhook sandbox. No procesar pagos reales durante QA.
+7. Completar pruebas reales, licencia comercial, prestaciones, aviso y términos revisados, retención y canal de soporte antes de GO para ventas. Mantener Basic/VIP sin venta hasta resolución.
+8. El paso a pagos reales requiere `MP_ENVIRONMENT=live` y `MP_ENABLE_LIVE_PAYMENTS=true`, cuenta habilitada y GO comercial documentado; no activarlos al introducir una clave.
+
+## Verificación y recuperación
+
+- `npm run check:public -- https://cantalove.vercel.app`: páginas públicas, cabeceras y denegación anónima; no genera canciones ni pagos. Node 24 admite `NODE_USE_ENV_PROXY=1` si el entorno requiere proxy.
+- `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run test:e2e`.
+- Build usa Webpack para evitar fallo de resolución de fuentes de Turbopack observado en Vercel. No tocar la configuración de Xamans.
+- Si falla un despliegue nuevo, conservar el último READY del mismo proyecto; inspeccionar logs antes de reintentar. No reactivar flags para intentar arreglar un despliegue.
+- No reintentar submits musicales o checkouts ambiguos sin reconciliar primero el proveedor.

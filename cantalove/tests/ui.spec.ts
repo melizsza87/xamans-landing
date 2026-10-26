@@ -147,4 +147,7 @@ test("private audio and downloads remain denied for anonymous visitors", async (
     headers: { Origin: base },
   });
   expect([401, 403, 404]).toContain(checkout.status());
+  const polling = await request.get(base + `/api/song-status/${order}`);
+  expect(polling.status()).toBe(401);
+  expect(await polling.text()).not.toMatch(/SUPABASE|service_role|stack|postgres|Missing/);
 });
